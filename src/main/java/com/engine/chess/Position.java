@@ -4,6 +4,8 @@ public class Position {
     private char[][] position;
 
     private byte enPassant = 0b00000000;
+
+    private byte castlingRights = 0b00001111;
     private long bR = 0L;
     private long bN = 0L;
     private long bB = 0L;
@@ -26,7 +28,7 @@ public class Position {
     public void initialise(){
         position =
                 new char[][]{
-                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                        {' ', ' ', ' ', ' ', ' ', 'P', ' ', 'P'},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
@@ -163,6 +165,7 @@ public class Position {
             if(((newPosition.getwQ() >> i) & 1) == 1) {position[i/8][i%8] = 'Q';}
             if(((newPosition.getwP() >> i) & 1) == 1) {position[i/8][i%8] = 'P';}
             enPassant = newPosition.getEnPassant();
+            castlingRights = newPosition.getCastling();
         }
         initBitboards();
     }
@@ -290,4 +293,6 @@ public class Position {
     }
 
     public byte getEnPassant(){return enPassant;}
+
+    public byte getCastlingRights(){return castlingRights;}
 }

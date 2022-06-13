@@ -31,14 +31,11 @@ public class ChessController {
     public void showLegalMoves(String fromLoc)
     {
         position.initBitboards();
-        String legalMoves = moveGenerator.getMoves((byte) 0b00001111, position.getEnPassant(), (turn  % 2 == 0),position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
-        System.out.printf("/showlegalmovesrunning");
-        System.out.println("starting location" + startLoc);
+        String legalMoves = moveGenerator.getMoves(position.getCastlingRights(), position.getEnPassant(), (turn  % 2 == 0),position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
         moveArray = new HashMap<>();
         for(int i = 0; i < legalMoves.length(); i += 5){
             moveArray.put((legalMoves.substring(i,i+2) + legalMoves.substring(i+3, i+5)),legalMoves.substring(i, i+5));
         }
-        System.out.println(moveArray.keySet());
         for(String move: moveArray.values()){
             if(startLoc.equals(move.substring(0, 2))){
                 view.shadeTile((move.substring(3)));
@@ -65,11 +62,12 @@ public class ChessController {
         }
         if(moveArray.get(startLoc + wherepressed) != null){
             view.unShadePrevious();
+            System.out.println(moveArray.values());
             //generate bitboards and wrapper class describing position after the move has been made
-            BitBoardPosition nextPosition = moveGenerator.makeMove(turn % 2 == 0, moveArray.get(startLoc + wherepressed), position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
+            BitBoardPosition nextPosition = moveGenerator.makeMove(turn % 2 == 0, moveArray.get(startLoc + wherepressed), position.getCastlingRights(), position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
             //updates the position class with these bitboards
             position.bitBoardToPosition(nextPosition);
-            //
+
             view.initialiseBoard(position);
             startLoc = null;
             turn++;

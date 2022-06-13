@@ -85,7 +85,6 @@ public class ChessView extends Application {
             gameTile.getChildren().add(thisTile);
 
             if(i % 8 == 0) isWhite = !isWhite;
-
         }
 
 
