@@ -60,6 +60,12 @@ public class ChessView extends Application {
         userControls.getChildren().add(fenInputField);
         userControls.getChildren().add(enterFenInput);
 
+        //default position
+        Button startPos = new Button("Standard start");
+        startPos.setOnAction(e -> controller.initFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"));
+        userControls.getChildren().add(startPos);
+
+
         //generating the section with the board, game tiles, pieces ect
         gameTile = new FlowPane();
         gameTile.setMinSize(800.0, 800.0);

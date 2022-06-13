@@ -3,6 +3,7 @@ package com.engine.chess;
 public class Position {
     private char[][] position;
 
+    private byte enPassant = 0b00000000;
     private long bR = 0L;
     private long bN = 0L;
     private long bB = 0L;
@@ -161,6 +162,7 @@ public class Position {
             if(((newPosition.getwK() >> i) & 1) == 1) {position[i/8][i%8] = 'K';}
             if(((newPosition.getwQ() >> i) & 1) == 1) {position[i/8][i%8] = 'Q';}
             if(((newPosition.getwP() >> i) & 1) == 1) {position[i/8][i%8] = 'P';}
+            enPassant = newPosition.getEnPassant();
         }
         initBitboards();
     }
@@ -286,4 +288,6 @@ public class Position {
     public long getwP() {
         return wP;
     }
+
+    public byte getEnPassant(){return enPassant;}
 }

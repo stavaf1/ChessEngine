@@ -31,7 +31,7 @@ public class ChessController {
     public void showLegalMoves(String fromLoc)
     {
         position.initBitboards();
-        String legalMoves = moveGenerator.getMoves((byte) 0b00001111, (byte) 0b00000100, (turn  % 2 == 0),position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
+        String legalMoves = moveGenerator.getMoves((byte) 0b00001111, position.getEnPassant(), (turn  % 2 == 0),position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
         System.out.printf("/showlegalmovesrunning");
         System.out.println("starting location" + startLoc);
         moveArray = new HashMap<>();

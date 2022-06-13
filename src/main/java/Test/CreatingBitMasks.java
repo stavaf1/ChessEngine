@@ -2,6 +2,21 @@ package Test;
 
 public class CreatingBitMasks {
 
+    /**---------------------------------------\
+     * FLAGS FOR SPECIAL MOVE TYPES
+     * n = normal move,
+     * p = double push,
+     * l = king castle,
+     * c = queen castle,
+     * x = captures,
+     * e = en passant
+     * k = knight promotion //any of these with capture simply capitalised
+     * b = bishop promotion
+     * r = rook promotion
+     * q = queen promotion
+     */
+
+
     public static void main(String[] args){
 //        System.out.println(stringToBinary("0000000011111111000000000000000000000000000000000000000000000000"));
         System.out.println("rank 1 should look liek");

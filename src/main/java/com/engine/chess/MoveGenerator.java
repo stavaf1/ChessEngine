@@ -89,7 +89,7 @@ public class MoveGenerator {
 
 
         BitBoardPosition pseudoLegalPosition = null;
-        pseudoLegalPosition.setEnPassant((byte) 0b00000000);
+
         switch (move.charAt(2)){
             case 'x':
                 pseudoLegalPosition = takes(isWhite, fromBitBoard, toBitBoard, bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
@@ -97,10 +97,30 @@ public class MoveGenerator {
                 break;
             case 'n':
                 pseudoLegalPosition = quiet(isWhite, fromBitBoard, toBitBoard, bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                pseudoLegalPosition.setEnPassant((byte) 0b00000000);
+                break;
+            case 'p':
+                pseudoLegalPosition = doublePush(isWhite, fromBitBoard, toBitBoard, bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                break;
+            case 'e':
+                pseudoLegalPosition = enPassant(isWhite, fromBitBoard, toBitBoard, bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                pseudoLegalPosition.setEnPassant((byte) 0b00000000);
                 break;
         }
         return pseudoLegalPosition;
     }
+    public BitBoardPosition enPassant(boolean isWhite, long from, long to, long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
+    {
+        long removePawn = isWhite ? to << 8 : to >> 8;
+
+        if((from & wP) > 1){wP &= ~from; wP |= to; bP &= ~removePawn;}
+        if((from & bP) > 1){bP &= ~from; bP |= to; wP &= ~removePawn;}
+
+        return new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+    }
+
+
+
 
     public BitBoardPosition doublePush(boolean isWhite, long from, long to, long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
     {
@@ -109,6 +129,7 @@ public class MoveGenerator {
 
         BitBoardPosition next = new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
         for(int i = 0; i < 64; i++) if(((to >> i)&1)==1) next.setEnPassant((byte) (1 << (i%8)));
+        System.out.println(next.getEnPassant());
 
         return next;
     }
