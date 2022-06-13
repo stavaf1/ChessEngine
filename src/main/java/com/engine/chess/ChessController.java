@@ -83,6 +83,7 @@ public class ChessController {
     public void wipeScreen(ActionEvent e){
         position.clear();
         view.clearBoard();
+        turn = 0;
     }
 
     public void initFen(String fen){
