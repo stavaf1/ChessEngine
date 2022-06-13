@@ -1,12 +1,11 @@
 package com.engine.chess;
 
 import javafx.application.Application;
-import javafx.beans.Observable;
-import javafx.beans.binding.ListBinding;
-import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
@@ -16,11 +15,8 @@ import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.security.cert.Certificate;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicReferenceArray;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ChessView extends Application {
 
@@ -94,7 +90,53 @@ public class ChessView extends Application {
         stage.setTitle("Hello!");
         stage.setScene(scene);
         stage.show();
+    }
 
+
+    public String getPromotionChar(){
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("What to Promote to");
+        DialogPane buttonPanel = alert.getDialogPane();
+
+        HBox promotionOptions = new HBox();
+        promotionOptions.setMinSize(200.0, 30.0);
+        promotionOptions.setSpacing(5);
+        AtomicReference<String> promotionString = new AtomicReference<>();
+        promotionString.set("q");
+
+        Button knightButton = new Button("knight");
+        knightButton.setMinWidth(80);
+        knightButton.setOnAction(e -> {
+            promotionString.set("k");
+
+        });
+
+        Button bishopButton = new Button("bishop");
+        bishopButton.setMinWidth(80);
+        bishopButton.setOnAction(e -> {
+            promotionString.set("b");
+        });
+        Button rookButton = new Button("rook");
+        rookButton.setMinWidth(80);
+        rookButton.setOnAction(e -> {
+            promotionString.set("r");
+        });
+        Button queenButton = new Button("queen");
+        queenButton.setMinWidth(80);
+        queenButton.setOnAction(e -> {
+            promotionString.set("q");
+        });
+
+        promotionOptions.getChildren().add(knightButton);
+        promotionOptions.getChildren().add(bishopButton);
+        promotionOptions.getChildren().add(rookButton);
+        promotionOptions.getChildren().add(queenButton);
+
+        buttonPanel.getChildren().add(promotionOptions);
+        alert.showAndWait();
+
+
+        return promotionString.toString();
     }
 
     /**

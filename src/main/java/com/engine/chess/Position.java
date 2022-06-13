@@ -28,7 +28,6 @@ public class Position {
     public void initialise(){
         position =
                 new char[][]{
-                        {' ', ' ', ' ', ' ', ' ', 'P', ' ', 'P'},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
@@ -36,6 +35,7 @@ public class Position {
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                        {'P', ' ', ' ', 'P', ' ', ' ', ' ', ' '},
                 };
     }
 
@@ -116,6 +116,7 @@ public class Position {
                 case 'P' -> wP |= stringToBinary(bitString);
             }
         }
+        System.out.println(wP);
     }
 
     public long stringToBinary(String bitboard)
@@ -180,27 +181,6 @@ public class Position {
         }
     }
 
-    public void makeMove(String start, String end)
-    {
-        clearBitboards();
-
-        if(end.equals("") || end.equals(null)) return;
-        if(start.equals("") || start.equals(null)) return;
-
-        //clears the start location in the board representation
-        Integer startRow = Integer.parseInt("" + start.charAt(0));
-        Integer startCol = Integer.parseInt("" + start.charAt(1));
-        char startPiece = position[startRow][startCol];
-        position[startRow][startCol] = ' ';
-
-        //populates the destination location
-        Integer endRow = Integer.parseInt("" + end.charAt(0));
-        Integer endCol = Integer.parseInt("" + end.charAt(1));
-        position[endRow][endCol] = startPiece;
-
-        initBitboards();
-        printBoard();
-    }
 
 
     public char getPieceAt(Integer tileId)

@@ -34,7 +34,11 @@ public class MoveGenerator {
 
     private static long WHITEROOK_CASTLEKINGSIDE = -6917529027641081856L;
 
-    private static long BLACKROOK_CASTLEKINGSIDE = 160;
+    private static long BLACKROOK_CASTLEKINGSIDE = 160L;
+
+    private static long WHITEROOK_CASTLEQUEENSIDE = 648518346341351424L;
+
+    private static long BLACKROOK_CASTLEQUEENSIDE = 9L;
 
     private static long PIN_BOARD;
     protected static long RANK_4 = 1095216660480L;
@@ -97,28 +101,186 @@ public class MoveGenerator {
         switch (move.charAt(2)){
             case 'x':
                 pseudoLegalPosition = takes(isWhite, fromBitBoard, toBitBoard, previousCastling, bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
-                pseudoLegalPosition.setEnPassant((byte) 0b00000000);
+
                 break;
             case 'n':
                 pseudoLegalPosition = quiet(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
-                pseudoLegalPosition.setEnPassant((byte) 0b00000000);
+
                 break;
             case 'p':
                 pseudoLegalPosition = doublePush(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
                 break;
             case 'e':
                 pseudoLegalPosition = enPassant(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
-                pseudoLegalPosition.setEnPassant((byte) 0b00000000);
+
                 break;
             case 'l':
                 pseudoLegalPosition = castlesKingside(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
-                pseudoLegalPosition.setEnPassant((byte) 0b00000000);
+                break;
             case 'c':
-
+                pseudoLegalPosition = castlesQueenside(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                break;
+            case 'k':
+                pseudoLegalPosition = knightPromotion(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                break;
+            case 'b':
+                pseudoLegalPosition = bishopPromotion(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                break;
+            case 'r':
+                pseudoLegalPosition = rookPromotion(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                break;
+            case 'q':
+                pseudoLegalPosition = queenPromotion(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                break;
+            case 'K':
+                pseudoLegalPosition = knightTakePromotion(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                break;
+            case 'B':
+                pseudoLegalPosition = bishopTakesPromotion(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                break;
+            case 'R':
+                pseudoLegalPosition = rookTakesPromotion(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                break;
+            case 'Q':
+                pseudoLegalPosition = queenTakesPromotion(isWhite, fromBitBoard, toBitBoard, previousCastling,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+                break;
         }
         return pseudoLegalPosition;
     }
+    public BitBoardPosition queenTakesPromotion(boolean isWhite, long from, long to, byte castles,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
+    {
+        wN &= ~to;
+        wB &= ~to;
+        wR &= ~to;
+        wP &= ~to;
+        wQ &= ~to;
+        bN &= ~to;
+        bB &= ~to;
+        bR &= ~to;
+        bQ &= ~to;
+        bP &= ~to;
+        return queenPromotion(isWhite, from, to, castles,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+    }
 
+    public BitBoardPosition rookTakesPromotion(boolean isWhite, long from, long to, byte castles,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
+    {
+        wN &= ~to;
+        wB &= ~to;
+        wR &= ~to;
+        wP &= ~to;
+        wQ &= ~to;
+        bN &= ~to;
+        bB &= ~to;
+        bR &= ~to;
+        bQ &= ~to;
+        bP &= ~to;
+        return rookPromotion(isWhite, from, to, castles,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+    }
+    public BitBoardPosition bishopTakesPromotion(boolean isWhite, long from, long to, byte castles,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
+    {
+        wN &= ~to;
+        wB &= ~to;
+        wR &= ~to;
+        wP &= ~to;
+        wQ &= ~to;
+        bN &= ~to;
+        bB &= ~to;
+        bR &= ~to;
+        bQ &= ~to;
+        bP &= ~to;
+        return bishopPromotion(isWhite, from, to, castles,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+    }
+
+    public BitBoardPosition knightTakePromotion(boolean isWhite, long from, long to, byte castles,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
+    {
+        wN &= ~to;
+        wB &= ~to;
+        wR &= ~to;
+        wP &= ~to;
+        wQ &= ~to;
+        bN &= ~to;
+        bB &= ~to;
+        bR &= ~to;
+        bQ &= ~to;
+        bP &= ~to;
+        return knightPromotion(isWhite, from, to, castles,bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+    }
+    public BitBoardPosition queenPromotion(boolean isWhite, long from, long to, byte castles,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
+    {
+        if(isWhite){
+            wP &= ~from;
+            wQ |= to;
+        } else {
+            bP &= ~from;
+            bQ |= to;
+        }
+        BitBoardPosition next = new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+        next.setCastling(castles);
+        return next;
+    }
+
+
+    public BitBoardPosition rookPromotion(boolean isWhite, long from, long to, byte castles,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
+    {
+        if(isWhite){
+            wP &= ~from;
+            wR |= to;
+        } else {
+            bP &= ~from;
+            bR |= to;
+        }
+        BitBoardPosition next = new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+        next.setCastling(castles);
+        return next;
+    }
+
+
+    public BitBoardPosition bishopPromotion(boolean isWhite, long from, long to, byte castles,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
+    {
+        if(isWhite){
+            wP &= ~from;
+            wB |= to;
+        } else {
+            bP &= ~from;
+            bB |= to;
+        }
+        BitBoardPosition next = new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+        next.setCastling(castles);
+        return next;
+    }
+    public BitBoardPosition knightPromotion(boolean isWhite, long from, long to, byte castles,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
+    {
+        if(isWhite){
+            wP &= ~from;
+            wN |= to;
+        } else {
+            bP &= ~from;
+            bN |= to;
+        }
+        BitBoardPosition next = new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+        next.setCastling(castles);
+        return next;
+    }
+
+
+    public BitBoardPosition castlesQueenside(boolean isWhite, long from, long to, byte castles,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
+    {
+        byte castlingrightsMask = 0b00000000;
+        if(isWhite){
+            wK = wK >> 2;
+            wR ^= WHITEROOK_CASTLEQUEENSIDE;
+            castlingrightsMask = 0b00000011;
+        } else {
+            bK = bK >> 2;
+            bR ^= BLACKROOK_CASTLEQUEENSIDE;
+            castlingrightsMask = 0b00001100;
+        }
+
+        BitBoardPosition next = new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
+        next.setCastling((byte) ((byte) castles & ~castlingrightsMask));
+        return next;
+
+    }
     public BitBoardPosition castlesKingside(boolean isWhite, long from, long to, byte castles,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
     {
         byte castlingrightsMask = 0b00000000;
@@ -192,7 +354,7 @@ public class MoveGenerator {
     public BitBoardPosition takes(boolean isWhite, long from, long to, byte castles,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
     {
         byte castlingRightsMask = (byte) 0b00000000;
-
+        //clearing potential desinations
         wN &= ~to;
         wB &= ~to;
         wR &= ~to;
@@ -202,6 +364,7 @@ public class MoveGenerator {
         bB &= ~to;
         bR &= ~to;
         bQ &= ~to;
+        bP &= ~to;
 
         if((bR & to) != 0)if((bR & fileMask[0]) > 1) castlingRightsMask |= 0b00001000; if((bR & fileMask[7]) > 1) castlingRightsMask |= 0b00000100;
         if((wR & to) !=  0)if((wR & fileMask[0]) > 1) castlingRightsMask |= 0b00000010; if((wR & fileMask[7]) > 1) castlingRightsMask |= 0b00000001;
@@ -236,12 +399,21 @@ public class MoveGenerator {
 
 //        moves forward by one
         long bitOneForward = (pawnBoard << 8) & ~OCCUPIED_TILES;
-
+        long promotions = bitOneForward & rankMask[7];
+        bitOneForward &= ~rankMask[7];
         for(int i = 0; i < 64; i++){
             if(((bitOneForward >> i) & 1) == 1){
                 pawnMoves += "" + (i/8 - 1) + (i%8) + "n" + (i/8) + (i%8); //n denoting normal move
             }
+            if(((promotions>>i) & 1) == 1){
+                pawnMoves += "" + (i/8 - 1) + (i%8) + "k" + (i/8) + (i%8);
+                pawnMoves += "" + (i/8 - 1) + (i%8) + "b" + (i/8) + (i%8);
+                pawnMoves += "" + (i/8 - 1) + (i%8) + "r" + (i/8) + (i%8);
+                pawnMoves += "" + (i/8 - 1) + (i%8) + "q" + (i/8) + (i%8);
+            }
         }
+
+
         // moves forward by two
         long bitTwoForward = ((pawnBoard << 16) & RANK_5 & (~OCCUPIED_TILES << 8) & ~OCCUPIED_TILES);
         PAWN_MOVES = PAWN_MOVES | bitTwoForward;
@@ -249,19 +421,37 @@ public class MoveGenerator {
 
         long takesLeft = ((pawnBoard & ~FILE_1) << 7) & WHITE_OCCUPANCY;
         BLACK_ATTACKS |= ((pawnBoard & ~FILE_1) << 7);
+        long promotionTakesLeft = takesLeft & rankMask[7];
+        takesLeft = takesLeft & ~rankMask[7];
+
 //        PAWN_MOVES = PAWN_MOVES | takesLeft;
         for(int i = 0; i < 64; i++){
             if(((takesLeft >> i) & 1) == 1){
                 pawnMoves += ("" + (i/8 - 1) + (i%8 + 1)+ "x" + (i/8) + (i%8));
             }
+            if(((promotionTakesLeft >> i) & 1) == 1){
+                pawnMoves += ("" + (i/8 - 1) + (i%8 + 1)+ "K" + (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 - 1) + (i%8 + 1)+ "B" + (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 - 1) + (i%8 + 1)+ "R" + (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 - 1) + (i%8 + 1)+ "Q" + (i/8) + (i%8));
+            }
         }
 
         long takesRight = ((pawnBoard & ~FILE_8) << 9) & WHITE_OCCUPANCY;
         BLACK_ATTACKS |= ((pawnBoard & ~FILE_8) << 9);
+        long promotionTakesRight = takesRight & rankMask[7];
+        takesRight = takesRight & ~rankMask[7];
+
 //        PAWN_MOVES = PAWN_MOVES | takesRight;
         for(int i = 0; i < 64; i++){
             if(((takesRight >> i) & 1) == 1){
                 pawnMoves += ("" + (i/8 - 1) + ((i-1)%8)+ "x" + (i/8) + (i%8));
+            }
+            if(((promotionTakesRight >> i) & 1) == 1){
+                pawnMoves += ("" + (i/8 - 1) + ((i-1)%8)+ "K" + (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 - 1) + ((i-1)%8)+ "B" + (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 - 1) + ((i-1)%8)+ "R" + (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 - 1) + ((i-1)%8)+ "Q" + (i/8) + (i%8));
             }
         }
 
@@ -294,9 +484,17 @@ public class MoveGenerator {
 
         //moves forward by one
         long bitOneForward = (pawnBoard >>> 8) & ~OCCUPIED_TILES;
+        long promotions = bitOneForward & rankMask[0];
+        bitOneForward &= ~rankMask[0];
         for(int i = 0; i < 64; i++){
             if(((bitOneForward >> i) & 1L) == 1L){
                 pawnMoves += "" + (i/8 + 1) + (i%8) + "n" +(i/8) + (i%8);
+            }
+            if(((promotions >> i) & 1) ==1){
+                pawnMoves += "" + (i/8 + 1) + (i%8) + "b" +(i/8) + (i%8);
+                pawnMoves += "" + (i/8 + 1) + (i%8) + "k" +(i/8) + (i%8);
+                pawnMoves += "" + (i/8 + 1) + (i%8) + "r" +(i/8) + (i%8);
+                pawnMoves += "" + (i/8 + 1) + (i%8) + "q" +(i/8) + (i%8);
             }
         }
 
@@ -307,19 +505,35 @@ public class MoveGenerator {
 
         long takesRight = ((pawnBoard & ~FILE_1) >> 9) & BLACK_OCCUPANCY;
         WHITE_ATTACKS |= ((pawnBoard & ~FILE_1) >> 9);
+        long takesRightPromotions = takesRight & rankMask[0];
+        takesRight &= ~rankMask[0];
 //        PAWN_MOVES = PAWN_MOVES | takesRight;
         for(int i = 0; i < 64; i++){
             if(((takesRight >> i) & 1) == 1){
                 pawnMoves += ("" + (i/8 + 1) + (i%8 + 1) +"x"+ (i/8) + (i%8));
             }
+            if(((takesRightPromotions>>i)&1)==1){
+                pawnMoves += ("" + (i/8 + 1) + (i%8 + 1) +"K"+ (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 + 1) + (i%8 + 1) +"B"+ (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 + 1) + (i%8 + 1) +"R"+ (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 + 1) + (i%8 + 1) +"Q"+ (i/8) + (i%8));
+            }
         }
 
         long takesLeft = ((pawnBoard & ~FILE_8) >> 7) & BLACK_OCCUPANCY;
         WHITE_ATTACKS |= ((pawnBoard & ~FILE_8) >> 7);
+        long takesLeftPromotions = takesLeft & rankMask[0];
+        takesLeft &= ~rankMask[0];
 //        PAWN_MOVES = PAWN_MOVES | takesLeft;
         for(int i = 0; i < 64; i++){
             if(((takesLeft >> i) & 1) == 1){
                 pawnMoves += ("" + (i/8 + 1) + ((i-1)%8)+ "x" + (i/8) + (i%8));
+            }
+            if(((takesRightPromotions >> i)&1)==1){
+                pawnMoves += ("" + (i/8 + 1) + ((i-1)%8)+ "K" + (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 + 1) + ((i-1)%8)+ "B" + (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 + 1) + ((i-1)%8)+ "R" + (i/8) + (i%8));
+                pawnMoves += ("" + (i/8 + 1) + ((i-1)%8)+ "Q" + (i/8) + (i%8));
             }
         }
 

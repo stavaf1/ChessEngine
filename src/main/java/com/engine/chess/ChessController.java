@@ -63,15 +63,29 @@ public class ChessController {
         if(moveArray.get(startLoc + wherepressed) != null){
             view.unShadePrevious();
             System.out.println(moveArray.values());
+            //check if more input is needed, ie what to promote to
+            char promotionvalue = moveArray.get(startLoc + wherepressed).charAt(2);
+            boolean isTakes = Character.isUpperCase(promotionvalue);
+            BitBoardPosition nextPosition;
+            if(promotionvalue == 'k' || promotionvalue == 'b' || promotionvalue == 'r' || promotionvalue == 'Q' || promotionvalue == 'K' || promotionvalue == 'B' || promotionvalue == 'R' || promotionvalue == 'q'){
+                String moveType = isTakes ? view.getPromotionChar().toUpperCase() : view.getPromotionChar();
+                nextPosition = moveGenerator.makeMove(turn % 2 == 0, (startLoc +moveType+wherepressed), position.getCastlingRights(), position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
+
+                System.out.println(moveType);
+            }
+
             //generate bitboards and wrapper class describing position after the move has been made
-            BitBoardPosition nextPosition = moveGenerator.makeMove(turn % 2 == 0, moveArray.get(startLoc + wherepressed), position.getCastlingRights(), position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
-            //updates the position class with these bitboards
+            else {
+                 nextPosition = moveGenerator.makeMove(turn % 2 == 0, moveArray.get(startLoc + wherepressed), position.getCastlingRights(), position.getbR(), position.getbN(), position.getbB(), position.getbQ(), position.getbK(), position.getbP(), position.getwR(), position.getwN(), position.getwB(), position.getwK(), position.getwQ(), position.getwP());
+            }
+                //updates the position class with these bitboards
             position.bitBoardToPosition(nextPosition);
 
             view.initialiseBoard(position);
             startLoc = null;
             turn++;
         }
+        //if the square pressed does not represent a legal move
         if(moveArray.get(startLoc + wherepressed) == null){
             view.unShadePrevious();
             startLoc = wherepressed;

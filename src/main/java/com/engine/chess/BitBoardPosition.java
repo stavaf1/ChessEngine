@@ -28,7 +28,7 @@ public class BitBoardPosition {
     private long bB = 0L;
     private long bK = 0L;
     private long bQ = 0L;
-    private long bP = 0L;
+    private long bP;
     private long wR = 0L;
     private long wN = 0L;
     private long wB = 0L;
@@ -38,7 +38,7 @@ public class BitBoardPosition {
 
     private byte castling;
 
-    private byte enPassant;
+    private byte enPassant = 0b00000000;
 
     /**
      * Simple wrapper class for a position object
