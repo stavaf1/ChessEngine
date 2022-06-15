@@ -11,6 +11,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 import java.io.File;
+import java.net.URL;
 import java.util.Iterator;
 
 public class GameTile extends StackPane {
@@ -60,9 +61,11 @@ public class GameTile extends StackPane {
     public void addInhabitant(char pieceName)
     {
         if(pieceName == ' ') return;
+        String imageName;
+        if(Character.isUpperCase(pieceName)){imageName = "w" + pieceName;} else {imageName = "" + pieceName;}
 
-        File file = new File("/home/stav/University/PPA/myWork/Chess/src/main/resources/com/engine/chess/ChessPieces/" + pieceName + ".png");
-        Image image = new Image(file.toURI().toString());
+        URL imageUrl = getClass().getResource("ChessPieces/" + imageName + ".png");
+        Image image = new Image(imageUrl.toString());
         photo = new PieceView(image, tileId);
 
         addInhabitant(photo);
