@@ -48,11 +48,12 @@ public class MoveGenerator {
     protected static long EDGES = -35604928818740737L;
 
 
-    protected long BLACK_OCCUPANCY, WHITE_OCCUPANCY, OCCUPIED_TILES, WHITE_ATTACKS, BLACK_ATTACKS, BLOCK_CHECK, PIN_BOARD, PIN_VERTICAL, PIN_HORIZONTAL, PIN_DIAGONAL, PIN_ANTIDIAGONAL;
+    protected long BLACK_OCCUPANCY, WHITE_OCCUPANCY, OCCUPIED_TILES, WHITE_ATTACKS, BLACK_ATTACKS, BLOCK_CHECK, PIN_BOARD, PIN_VERTICAL, PIN_HORIZONTAL, PIN_DIAGONAL, PIN_ANTIDIAGONAL, UNSAFE_FORKING;
     //BLACK/WHITE_ATTACKS denotes any square to which a black or white piece may move, especially for the purposes
     //of determining king moves
 
     public String getMoves(byte castling, byte enPassant ,boolean isWhite ,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP){
+        UNSAFE_FORKING = 0L;
         PIN_BOARD = 0L;
         PIN_ANTIDIAGONAL = 0L;
         PIN_DIAGONAL = 0L;
@@ -100,7 +101,8 @@ public class MoveGenerator {
 //        long blockingPieces = isWhite? BLACK_OCCUPANCY : WHITE_OCCUPANCY;
 
         long defendingKing = bK;
-        long offendingRooks = wR;
+        long offendingRooks = wR | wQ;
+        long offendingBishops = wB | wQ;
         long blockers = OCCUPIED_TILES;
 
         int kingSerialized = 0;
