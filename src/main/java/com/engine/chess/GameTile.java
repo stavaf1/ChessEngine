@@ -28,7 +28,7 @@ public class GameTile extends StackPane {
         this.parent = parent;
         //initialises the square behind the pieces
         color = isWhite ? Color.WHITE : Color.DARKGRAY;
-        rect = new Rectangle(100, 100);
+        rect = new Rectangle(80, 80);
         rect.setFill(color);
 
 

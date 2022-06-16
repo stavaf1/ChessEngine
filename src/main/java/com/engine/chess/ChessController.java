@@ -62,7 +62,6 @@ public class ChessController {
         }
         if(moveArray.get(startLoc + wherepressed) != null){
             view.unShadePrevious();
-            showLegalMoves(wherepressed);
             //check if more input is needed, ie what to promote to
             char promotionvalue = moveArray.get(startLoc + wherepressed).charAt(2);
             boolean isTakes = Character.isUpperCase(promotionvalue);

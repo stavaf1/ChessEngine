@@ -53,6 +53,7 @@ public class MoveGenerator {
     //of determining king moves
 
     public String getMoves(byte castling, byte enPassant ,boolean isWhite ,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP){
+        long startTime = System.currentTimeMillis();
         UNSAFE_FORKING = 0L;
         PIN_BOARD = 0L;
         PIN_ANTIDIAGONAL = 0L;
@@ -68,7 +69,6 @@ public class MoveGenerator {
         OCCUPIED_TILES = (WHITE_OCCUPANCY | BLACK_OCCUPANCY);
 
         int numChecks = initBlockCheck(isWhite, bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
-        System.out.println(numChecks);
 
 //        String leadingZeroes = "";
 //        for(int i = 0; i<numberOfLeadingZeros(OCCUPIED_TILES);i++){leadingZeroes += "0";}
@@ -89,7 +89,7 @@ public class MoveGenerator {
             blackMoves += kingMoves(bK, castling, false);
         }
 
-
+        System.out.println("moves for one position:" + (System.currentTimeMillis() - startTime));
         if(numChecks == 2) return kingMoves(isWhite? wK : bK, castling, isWhite);
         return isWhite ? whiteMoves: blackMoves;
 
@@ -132,22 +132,25 @@ public class MoveGenerator {
 
 
         //generates all rays from rooks to kings
-        if((rankMask[kingSerialized/8] & offendingRooks & ~offendingRooks) != 0){
+        if((rankMask[kingSerialized/8] & offendingRooks) != 0){
             //some rook may be on the same rank as the king
             //the attack line to and through the king with the king position omitted
             long kingToRookHorizontalXray = (((offendingRooks | fileMask[0] | fileMask[7]) - 2*defendingKing) ^ (reverse(reverse(offendingRooks | fileMask[0] | fileMask[7]) - 2*reverse(defendingKing)))) & rankMask[kingSerialized/8];
             if(rookIsRight){rookRightRay = kingToRookHorizontalXray & downMask;}
             if(rookIsLeft){rookLeftRay = kingToRookHorizontalXray & upMask;}
-            if(((rookRightRay | rookLeftRay) & blockers) != 0){
+            if(((rookRightRay | rookLeftRay) & blockers & ~offendingRooks) != 0){
                 long thisRook = offendingRooks & kingToRookHorizontalXray;
                 long rookToBlocker = (((blockers | fileMask[0] | fileMask[7]) - 2*thisRook) ^ (reverse(reverse(blockers | fileMask[0] | fileMask[7]) - 2*reverse(thisRook)))) & rankMask[kingSerialized/8];
                 long kingToBlocker = (((blockers | fileMask[0] | fileMask[7]) - 2*defendingKing) ^ (reverse(reverse(blockers | fileMask[0] | fileMask[7]) - 2*reverse(defendingKing)))) & rankMask[kingSerialized/8];
                 PIN_BOARD |= rookToBlocker & kingToBlocker & blockers;
                 PIN_HORIZONTAL = kingToRookHorizontalXray; //where a horizontally pinned piece can move
+                //preventing illegal en passant
+                if((kingSerialized/8 ==3) || kingSerialized/8 == 4){
+                    PIN_HORIZONTAL = (rookRightRay | rookLeftRay) & ~thisRook;
+                    //^^ this is the line from a(INCLUSIVE) to respective offender/defender NOT INCLUSIVE
+                }
                 //if (pinhorizontal & pinBoard) != 0, the piece can move across the pinhorizontal
-                printBitBoard(((rookRightRay | rookLeftRay) & blockers));
             } else if ((rookRightRay & blockers) == 0 | (rookLeftRay & blockers) == 0) {
-                System.out.println("check horiz");
                 numChecks++;
                 BLOCK_CHECK = (rookRightRay | rookLeftRay);
             }
@@ -354,9 +357,16 @@ public class MoveGenerator {
         long PAWN_MOVES = 0L;
 
 //        moves forward by one
-        long bitOneForward = (pawnBoard << 8) & ~OCCUPIED_TILES;
+        long preOneForwardBoard = pawnBoard;
+        long possiblePinnedPawn = PIN_BOARD & pawnBoard & (PIN_HORIZONTAL | PIN_ANTIDIAGONAL | PIN_ANTIDIAGONAL);
+        if((possiblePinnedPawn) != 0){
+            //if pinned diagonally or horizontally, cannot move forward
+            preOneForwardBoard = pawnBoard &~possiblePinnedPawn;
+        }
+        long bitOneForward = (preOneForwardBoard << 8) & ~OCCUPIED_TILES;
         long promotions = bitOneForward & rankMask[7];
         bitOneForward &= ~rankMask[7];
+        //diagonally or horiontally pinned pawns cannot move forward
         for(int i = 0; i < 64; i++){
             if(((bitOneForward >> i) & 1) == 1){
                 pawnMoves += "" + (i/8 - 1) + (i%8) + "n" + (i/8) + (i%8); //n denoting normal move
@@ -371,12 +381,15 @@ public class MoveGenerator {
 
 
         // moves forward by two
-        long bitTwoForward = ((pawnBoard << 16) & RANK_5 & (~OCCUPIED_TILES << 8) & ~OCCUPIED_TILES);
+        long bitTwoForward = ((preOneForwardBoard << 16) & RANK_5 & (~OCCUPIED_TILES << 8) & ~OCCUPIED_TILES);
         PAWN_MOVES = PAWN_MOVES | bitTwoForward;
         for(int i = 0; i < 64; i++){if(((PAWN_MOVES >> i) & 1) == 1){pawnMoves += "" + (i/8 - 2) + (i%8)+ "p" + (i/8) + (i%8);}}
 
-        long takesLeft = ((pawnBoard & ~FILE_1) << 7) & WHITE_OCCUPANCY;
-        BLACK_ATTACKS |= ((pawnBoard & ~FILE_1) << 7);
+        long tempTakesLeft = pawnBoard;
+        long possibleAntidiagPinnedPawn = (tempTakesLeft & PIN_BOARD & (PIN_ANTIDIAGONAL | PIN_HORIZONTAL | PIN_VERTICAL));
+        if((possibleAntidiagPinnedPawn)!= 0)tempTakesLeft &= ~possibleAntidiagPinnedPawn;
+        long takesLeft = ((tempTakesLeft & ~FILE_1) << 7) & WHITE_OCCUPANCY;
+        BLACK_ATTACKS |= ((tempTakesLeft & ~FILE_1) << 7);
         long promotionTakesLeft = takesLeft & rankMask[7];
         takesLeft = takesLeft & ~rankMask[7];
 
@@ -417,6 +430,11 @@ public class MoveGenerator {
         long enPassantRight = 0L;
         for(int i = 0; i < 8; i++){
             if(((enPassant >> i) &1) == 1){
+                //to boards for the en passsanting pawns.
+                /**
+                 * toDo
+                 * figure out how to nicely prevent illegal en passant.
+                 */
                 enPassantLeft |= ((pawnBoard & ~FILE_1 & rankMask[4]) << 7) & fileMask[i];
                 enPassantRight |= ((pawnBoard & ~FILE_8 & rankMask[4]) << 9) & fileMask[i];
 

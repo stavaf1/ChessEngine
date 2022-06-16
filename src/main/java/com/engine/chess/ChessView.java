@@ -64,8 +64,8 @@ public class ChessView extends Application {
 
         //generating the section with the board, game tiles, pieces ect
         gameTile = new FlowPane();
-        gameTile.setMinSize(800.0, 800.0);
-        gameTile.setMaxSize(800.0, 800.0);
+        gameTile.setMinSize(640.0, 640.0);
+        gameTile.setMaxSize(640.0, 640.0);
 
         boolean isWhite = false;
         for(int i = 63; i >= 0; i--){
