@@ -68,7 +68,7 @@ public class MoveGenerator {
         OCCUPIED_TILES = (WHITE_OCCUPANCY | BLACK_OCCUPANCY);
 
         int numChecks = initBlockCheck(isWhite, bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP);
-
+        System.out.println(numChecks);
 
 //        String leadingZeroes = "";
 //        for(int i = 0; i<numberOfLeadingZeros(OCCUPIED_TILES);i++){leadingZeroes += "0";}
@@ -89,6 +89,8 @@ public class MoveGenerator {
             blackMoves += kingMoves(bK, castling, false);
         }
 
+
+        if(numChecks == 2) return kingMoves(isWhite? wK : bK, castling, isWhite);
         return isWhite ? whiteMoves: blackMoves;
 
     }
@@ -100,9 +102,9 @@ public class MoveGenerator {
 //        long offendingRooks = isWhite ? bR : wR;
 //        long blockingPieces = isWhite? BLACK_OCCUPANCY : WHITE_OCCUPANCY;
 
-        long defendingKing = bK;
-        long offendingRooks = wR | wQ;
-        long offendingBishops = wB | wQ;
+        long defendingKing = isWhite ? wK : bK;
+        long offendingRooks = isWhite ? (bR | bQ) : (wR | wQ);
+        long offendingBishops = isWhite ?  (bB | bQ) : (wB | wQ);
         long blockers = OCCUPIED_TILES;
 
         int kingSerialized = 0;
@@ -118,8 +120,9 @@ public class MoveGenerator {
         boolean rookIsBelow = ((reverse(reverse(defendingKing)-1) & (offendingRooks & fileMask[kingSerialized % 8])) != 0);
 
         //masking positions so we can separarte different checks
-        long upLeftMask = (defendingKing - 1);
-        long downRightMask = (reverse(reverse(defendingKing)-1));
+        long upMask = (defendingKing - 1);
+        long downMask = (reverse(reverse(defendingKing)-1));
+
 
         //initialise bitboards
         long rookLeftRay = 0;
@@ -129,12 +132,12 @@ public class MoveGenerator {
 
 
         //generates all rays from rooks to kings
-        if((rankMask[kingSerialized/8] & offendingRooks) != 0){
+        if((rankMask[kingSerialized/8] & offendingRooks & ~offendingRooks) != 0){
             //some rook may be on the same rank as the king
             //the attack line to and through the king with the king position omitted
             long kingToRookHorizontalXray = (((offendingRooks | fileMask[0] | fileMask[7]) - 2*defendingKing) ^ (reverse(reverse(offendingRooks | fileMask[0] | fileMask[7]) - 2*reverse(defendingKing)))) & rankMask[kingSerialized/8];
-            if(rookIsRight){rookRightRay = kingToRookHorizontalXray & downRightMask;}
-            if(rookIsLeft){rookLeftRay = kingToRookHorizontalXray & upLeftMask;}
+            if(rookIsRight){rookRightRay = kingToRookHorizontalXray & downMask;}
+            if(rookIsLeft){rookLeftRay = kingToRookHorizontalXray & upMask;}
             if(((rookRightRay | rookLeftRay) & blockers) != 0){
                 long thisRook = offendingRooks & kingToRookHorizontalXray;
                 long rookToBlocker = (((blockers | fileMask[0] | fileMask[7]) - 2*thisRook) ^ (reverse(reverse(blockers | fileMask[0] | fileMask[7]) - 2*reverse(thisRook)))) & rankMask[kingSerialized/8];
@@ -142,30 +145,79 @@ public class MoveGenerator {
                 PIN_BOARD |= rookToBlocker & kingToBlocker & blockers;
                 PIN_HORIZONTAL = kingToRookHorizontalXray; //where a horizontally pinned piece can move
                 //if (pinhorizontal & pinBoard) != 0, the piece can move across the pinhorizontal
+                printBitBoard(((rookRightRay | rookLeftRay) & blockers));
             } else if ((rookRightRay & blockers) == 0 | (rookLeftRay & blockers) == 0) {
+                System.out.println("check horiz");
                 numChecks++;
                 BLOCK_CHECK = (rookRightRay | rookLeftRay);
             }
         }
         if((fileMask[kingSerialized%8]&offendingRooks) != 0){
             long kingToRookVerticalXray = ((((offendingRooks & fileMask[kingSerialized % 8]) - 2*defendingKing) ^ reverse((reverse(offendingRooks & fileMask[kingSerialized % 8]) - 2*reverse(defendingKing)))) & fileMask[kingSerialized% 8]);
-            if(rookIsBelow){rookBelowRay = kingToRookVerticalXray &downRightMask;}
-            if(rookIsAbove){rookAboveRay = kingToRookVerticalXray & upLeftMask;}
-            if(((rookBelowRay | rookAboveRay) & blockers) != 0){
+            if(rookIsBelow){rookBelowRay = kingToRookVerticalXray &downMask;}
+            if(rookIsAbove){rookAboveRay = kingToRookVerticalXray & upMask;}
+            if(((rookBelowRay | rookAboveRay) & blockers & ~offendingRooks) != 0){
                 long thisRook = offendingRooks & kingToRookVerticalXray;
                 long rookToBlocker = ((((blockers & fileMask[kingSerialized % 8]) - 2*thisRook ) ^ reverse((reverse(blockers & fileMask[kingSerialized % 8]) - 2*reverse(thisRook)))) & fileMask[kingSerialized% 8]);
                 long kingToBlocker = ((((blockers & fileMask[kingSerialized % 8]) - 2*defendingKing ) ^ reverse((reverse(blockers & fileMask[kingSerialized % 8]) - 2*reverse(defendingKing)))) & fileMask[kingSerialized% 8]);
                 PIN_BOARD |= rookToBlocker & kingToBlocker & blockers;
-                PIN_VERTICAL =kingToRookVerticalXray;
+                PIN_VERTICAL = kingToRookVerticalXray;
             } else {
+                System.out.println("check vert");
                 numChecks++;
                 BLOCK_CHECK = (rookAboveRay | rookBelowRay);
             }
         }
 
-        //checks for blockers, initiates pins
-        printBitBoard(PIN_BOARD);
+        boolean bishopTopLeft = ((defendingKing-1) & (offendingBishops & antiDiagonalMask[(kingSerialized/8 + 7 - kingSerialized%8)])) != 0;
+        boolean bishopTopRight = ((defendingKing - 1) & (offendingBishops & diagonalMask[kingSerialized/8 + kingSerialized%8])) != 0;
 
+        boolean bishopBottomLeft = ((reverse(reverse(defendingKing) - 1) ) &(offendingBishops & diagonalMask[kingSerialized/8 + kingSerialized %8]))!=0;
+        boolean bishopBottomRight = ((reverse(reverse(defendingKing) - 1) ) &(offendingBishops & antiDiagonalMask[kingSerialized/8 + 7 - kingSerialized %8]))!=0;
+
+        long bishopBottomLeftRay = 0;
+        long bishopBottomRightRay = 0;
+        long bishopTopLeftRay = 0;
+        long bishopTopRightRay = 0;
+
+        //if there is a bishop on the same diagonal as the king, we calculate all pins for this direction
+        //if there is no blocking piece then the king is in check
+        if((diagonalMask[kingSerialized/8 + kingSerialized % 8] & offendingBishops) != 0) {
+            //if there is a bishop on the same diagonal as the king,
+            //draw the kings ray on this diagonal
+            long kingToBishopDiagonalXRay = (((offendingBishops & diagonalMask[(kingSerialized / 8 + kingSerialized % 8)]) - 2 * defendingKing) ^ reverse(reverse(offendingBishops & diagonalMask[(kingSerialized / 8 + kingSerialized % 8)]) - 2 * reverse(defendingKing))) & diagonalMask[(kingSerialized / 8 + kingSerialized % 8)];
+            if(bishopBottomLeft){bishopBottomLeftRay = kingToBishopDiagonalXRay & downMask;}
+            if(bishopTopRight){bishopTopRightRay = kingToBishopDiagonalXRay & upMask;}
+            if(((bishopBottomLeftRay | bishopTopRightRay) & blockers &~offendingBishops) != 0){
+                long thisBishop = offendingBishops & kingToBishopDiagonalXRay;
+                long bishopToBlocker = (((blockers & diagonalMask[(kingSerialized / 8 + kingSerialized % 8)])-2*thisBishop) ^ reverse(reverse(blockers & diagonalMask[(kingSerialized / 8 + kingSerialized % 8)]) - 2*reverse(thisBishop))) & diagonalMask[(kingSerialized / 8 + kingSerialized % 8)];
+                long kingToBlocker = (((blockers & diagonalMask[(kingSerialized / 8 + kingSerialized % 8)])-2*defendingKing) ^ reverse(reverse(blockers & diagonalMask[(kingSerialized / 8 + kingSerialized % 8)]) - 2*reverse(defendingKing))) & diagonalMask[(kingSerialized / 8 + kingSerialized % 8)];
+                PIN_BOARD |= bishopToBlocker & kingToBlocker & blockers;
+                PIN_DIAGONAL = kingToBishopDiagonalXRay;
+            }else  {
+                System.out.println("check diag");
+                numChecks++;
+                BLOCK_CHECK = bishopBottomLeftRay | bishopTopRightRay;
+            }
+        }
+        if((antiDiagonalMask[(kingSerialized/8 + 7 - kingSerialized%8)] & offendingBishops) != 0) {
+            //if there is a bishop on the same diagonal as the king,
+            //draw the kings ray on this diagonal
+            long kingToBishopAntiDiagonalXRay = (((offendingBishops & antiDiagonalMask[(kingSerialized/8 + 7 - kingSerialized%8)]) - 2 * defendingKing) ^ reverse(reverse(offendingBishops & antiDiagonalMask[(kingSerialized/8 + 7 - kingSerialized%8)]) - 2 * reverse(defendingKing))) & antiDiagonalMask[(kingSerialized/8 + 7 - kingSerialized%8)];
+            if(bishopBottomRight){bishopBottomRightRay = kingToBishopAntiDiagonalXRay & downMask;}
+            if(bishopTopLeft){bishopTopLeftRay = kingToBishopAntiDiagonalXRay & upMask;}
+            if(((bishopBottomRightRay | bishopTopLeftRay) & blockers & ~offendingBishops) != 0){
+                long thisBishop = offendingBishops & kingToBishopAntiDiagonalXRay;
+                long bishopToBlocker = (((blockers & antiDiagonalMask[(kingSerialized/8 + 7 - kingSerialized%8)])-2*thisBishop) ^ reverse(reverse(blockers & antiDiagonalMask[(kingSerialized/8 + 7 - kingSerialized%8)]) - 2*reverse(thisBishop))) & antiDiagonalMask[(kingSerialized/8 + 7 - kingSerialized%8)];
+                long kingToBlocker = (((blockers & antiDiagonalMask[(kingSerialized/8 + 7 - kingSerialized%8)])-2*defendingKing) ^ reverse(reverse(blockers & antiDiagonalMask[(kingSerialized/8 + 7 - kingSerialized%8)]) - 2*reverse(defendingKing))) & antiDiagonalMask[(kingSerialized/8 + 7 - kingSerialized%8)];
+                PIN_BOARD |= bishopToBlocker & kingToBlocker & blockers;
+                PIN_ANTIDIAGONAL = kingToBishopAntiDiagonalXRay;
+            } else {
+                System.out.println("check antidiag");
+                numChecks++;
+                BLOCK_CHECK = bishopBottomRightRay | bishopTopLeftRay;
+            }
+        }
         return numChecks;
     }
 
@@ -479,6 +531,8 @@ public class MoveGenerator {
                     if((rookBoard & PIN_BOARD) != 0){
                         if((rookBoard & PIN_BOARD & PIN_HORIZONTAL) != 0) theseMoves &= PIN_HORIZONTAL;
                         if((rookBoard & PIN_BOARD & PIN_VERTICAL) != 0) theseMoves &= PIN_VERTICAL;
+                        if((rookBoard & PIN_BOARD & PIN_ANTIDIAGONAL) != 0) theseMoves &= PIN_ANTIDIAGONAL;
+                        if((rookBoard & PIN_BOARD & PIN_DIAGONAL) != 0) theseMoves &= PIN_DIAGONAL;
                     }
                     theseMoves &= ~WHITE_OCCUPANCY;
                     takes = theseMoves & BLACK_OCCUPANCY;
@@ -489,6 +543,8 @@ public class MoveGenerator {
                     if((rookBoard & PIN_BOARD) != 0){
                         if((rookBoard & PIN_BOARD & PIN_HORIZONTAL) != 0) theseMoves &= PIN_HORIZONTAL;
                         if((rookBoard & PIN_BOARD & PIN_VERTICAL) != 0) theseMoves &= PIN_VERTICAL;
+                        if((rookBoard & PIN_BOARD & PIN_ANTIDIAGONAL) != 0) theseMoves &= PIN_ANTIDIAGONAL;
+                        if((rookBoard & PIN_BOARD & PIN_DIAGONAL) != 0) theseMoves &= PIN_DIAGONAL;
                     }
                     theseMoves &= ~BLACK_OCCUPANCY; //remove any potential friendly fires
                     takes = theseMoves & WHITE_OCCUPANCY;
@@ -518,12 +574,24 @@ public class MoveGenerator {
                 long quiets;
                 if(isWhite) {
                     WHITE_ATTACKS |= theseMoves;
+                    if((bishBoard & PIN_BOARD) != 0){
+                        if((bishBoard & PIN_BOARD & PIN_HORIZONTAL) != 0) theseMoves &= PIN_HORIZONTAL;
+                        if((bishBoard & PIN_BOARD & PIN_VERTICAL) != 0) theseMoves &= PIN_VERTICAL;
+                        if((bishBoard & PIN_BOARD & PIN_ANTIDIAGONAL) != 0) theseMoves &= PIN_ANTIDIAGONAL;
+                        if((bishBoard & PIN_BOARD & PIN_DIAGONAL) != 0) theseMoves &= PIN_DIAGONAL;
+                    }
                     theseMoves &= ~WHITE_OCCUPANCY;
                     takes = theseMoves & BLACK_OCCUPANCY;
                     quiets = theseMoves & ~BLACK_OCCUPANCY;
                 }
                 else {
                     BLACK_ATTACKS |= theseMoves;
+                    if((bishBoard & PIN_BOARD) != 0){
+                        if((bishBoard & PIN_BOARD & PIN_HORIZONTAL) != 0) theseMoves &= PIN_HORIZONTAL;
+                        if((bishBoard & PIN_BOARD & PIN_VERTICAL) != 0) theseMoves &= PIN_VERTICAL;
+                        if((bishBoard & PIN_BOARD & PIN_ANTIDIAGONAL) != 0) theseMoves &= PIN_ANTIDIAGONAL;
+                        if((bishBoard & PIN_BOARD & PIN_DIAGONAL) != 0) theseMoves &= PIN_DIAGONAL;
+                    }
                     theseMoves &= ~BLACK_OCCUPANCY; //remove any potential friendly fires
                     takes = theseMoves & WHITE_OCCUPANCY;
                     quiets = theseMoves & ~WHITE_OCCUPANCY; //split moves into takes and captures for the interpreter
@@ -552,12 +620,14 @@ public class MoveGenerator {
                 long quiets;
                 if(isWhite) {
                     WHITE_ATTACKS |= theseMoves;
+                    if((PIN_BOARD & knightBoard) != 0) return "";
                     theseMoves &= ~WHITE_OCCUPANCY;
                     takes = theseMoves & WHITE_OCCUPANCY;
                     quiets = theseMoves & ~WHITE_OCCUPANCY;
                 }
                 else {
                     BLACK_ATTACKS |= theseMoves;
+                    if((PIN_BOARD & knightBoard) != 0) return "";
                     theseMoves &= ~BLACK_OCCUPANCY; //remove any potential friendly fires
                     takes = theseMoves & BLACK_OCCUPANCY;
                     quiets = theseMoves & ~BLACK_OCCUPANCY;
