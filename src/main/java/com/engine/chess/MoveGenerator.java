@@ -77,7 +77,7 @@ public class MoveGenerator {
 
         //it will be important to consider the fact that king move generation will come last.
         String whiteMoves = whitePawnMoves(wP, enPassant) + bishopMoves(wB, true) + rookMoves(wR, true) + knightMoves(wN, true) + rookMoves(wQ, true) + bishopMoves(wQ, true);
-        String blackMoves = blackPawnMoves(bP, enPassant) + bishopMoves(bB, false) + rookMoves(bR, false) + knightMoves(bN, false) + rookMoves(bQ, false) + bishopMoves(bQ,false);
+        String blackMoves = blackPawnMoves(bP, wP,enPassant) + bishopMoves(bB, false) + rookMoves(bR, false) + knightMoves(bN, false) + rookMoves(bQ, false) + bishopMoves(bQ,false);
 
         if(isWhite){
             //to ensure white king cannot be adjacent to the black king, by
@@ -351,7 +351,7 @@ public class MoveGenerator {
         return pseudoLegalPosition;
     }
     
-    public String blackPawnMoves(long pawnBoard, byte enPassant)
+    public String blackPawnMoves(long pawnBoard, long opposingPawnBoard,byte enPassant)
     {
         String pawnMoves = "";
         long PAWN_MOVES = 0L;
@@ -405,9 +405,11 @@ public class MoveGenerator {
                 pawnMoves += ("" + (i/8 - 1) + (i%8 + 1)+ "q" + (i/8) + (i%8));
             }
         }
-
-        long takesRight = ((pawnBoard & ~FILE_8) << 9) & WHITE_OCCUPANCY;
-        BLACK_ATTACKS |= ((pawnBoard & ~FILE_8) << 9);
+        long tempTakesRight = pawnBoard;
+        long possibleDiagPinnedPawn = (tempTakesRight & PIN_BOARD & (PIN_DIAGONAL | PIN_HORIZONTAL | PIN_VERTICAL));
+        if((possibleDiagPinnedPawn) != 0)tempTakesRight &= ~possibleDiagPinnedPawn;
+        long takesRight = ((tempTakesRight & ~FILE_8) << 9) & WHITE_OCCUPANCY;
+        BLACK_ATTACKS |= ((tempTakesRight & ~FILE_8) << 9);
         long promotionTakesRight = takesRight & rankMask[7];
         takesRight = takesRight & ~rankMask[7];
 
@@ -428,15 +430,25 @@ public class MoveGenerator {
         // i here should represent the file wherein the opposing pawn pushed two
         long enPassantLeft = 0L;
         long enPassantRight = 0L;
+        long tempEnPassant = pawnBoard;
         for(int i = 0; i < 8; i++){
-            if(((enPassant >> i) &1) == 1){
+            //vertically pinned pieces can not en passant
+            if((((enPassant >> i) &1) == 1) &((PIN_VERTICAL & tempEnPassant)== 0)){
                 //to boards for the en passsanting pawns.
+                //if there is a potential horizontal pin, check whether any other pieces obstruct the line of attack
+                printBitBoard(PIN_HORIZONTAL);
+                printBitBoard(OCCUPIED_TILES & ~tempEnPassant);
+                //prevents horizontally pinned en passant
+                if((PIN_HORIZONTAL != 0) && ((PIN_HORIZONTAL& OCCUPIED_TILES & ~(tempEnPassant|opposingPawnBoard)) == 0)) tempEnPassant = 0;
+                //cant take left on file1, cant take right on file8, fileMask is en passant enabled file
+                //piined pawn can take left if pinned antidiagonally, and right if pinned diagonally,no en passant if the black pawn is pinned(not vertically)
                 /**
-                 * toDo
-                 * figure out how to nicely prevent illegal en passant.
+                 * TODO
+                 * piined pawn can take left if pinned antidiagonally, and right if pinned diagonally,no en passant if the black pawn is pinned(not vertically)
                  */
-                enPassantLeft |= ((pawnBoard & ~FILE_1 & rankMask[4]) << 7) & fileMask[i];
-                enPassantRight |= ((pawnBoard & ~FILE_8 & rankMask[4]) << 9) & fileMask[i];
+
+                enPassantLeft |= ((tempEnPassant & ~FILE_1 & rankMask[4]) << 7) & fileMask[i];
+                enPassantRight |= ((tempEnPassant & ~FILE_8 & rankMask[4]) << 9) & fileMask[i];
 
             }
         }

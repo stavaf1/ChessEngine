@@ -31,7 +31,7 @@ public class ChessController {
     public void showLegalMoves(String fromLoc)
     {
         position.initBitboards();
-        String legalMoves = moveGenerator.getMoves(position.getCastlingRights(), position.getEnPassant(), (turn  % 2 == 0),position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
+        String legalMoves = moveGenerator.getMoves(position.getCastlingRights(),(byte)0b11111111, (turn  % 2 == 0),position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
         moveArray = new HashMap<>();
         for(int i = 0; i < legalMoves.length(); i += 5){
             moveArray.put((legalMoves.substring(i,i+2) + legalMoves.substring(i+3, i+5)),legalMoves.substring(i, i+5));
