@@ -40,12 +40,14 @@ public class BitBoardPosition {
 
     private byte enPassant = 0b00000000;
 
+    private boolean whiteToMove;
+
     /**
      * Simple wrapper class for a position object
      *
      */
 
-    public BitBoardPosition(long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
+    public BitBoardPosition(long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP, boolean whiteToMove)
     {
         this.bB = bB;
         this.bN = bN;
@@ -59,6 +61,7 @@ public class BitBoardPosition {
         this.wK = wK;
         this.wQ = wQ;
         this.wP = wP;
+        this.whiteToMove = whiteToMove;
     }
 
     public void setCastling(byte castles){castling = castles;}
@@ -72,6 +75,8 @@ public class BitBoardPosition {
     public byte getEnPassant() {
         return enPassant;
     }
+
+    public boolean getWhiteToMove(){return whiteToMove;}
 
     public long getbR() {
         return bR;

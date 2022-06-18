@@ -6,6 +6,8 @@ public class Position {
     private byte enPassant = 0b00000000;
 
     private byte castlingRights = 0b00001111;
+
+    private boolean whiteToMove = true;
     private long bR = 0L;
     private long bN = 0L;
     private long bB = 0L;
@@ -28,14 +30,14 @@ public class Position {
     public void initialise(){
         position =
                 new char[][]{
-                        {' ', ' ', ' ', ' ', 'Q', ' ', ' ', ' '},
-                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-                        {' ', ' ', ' ', 'r', ' ', ' ', ' ', ' '},
-                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-                        {' ', 'k', ' ', 'P', 'p', ' ', 'b', 'R'},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-                        {'B', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                        {' ', 'K', ' ', ' ', ' ', ' ', ' ', 'r'},
+                        {' ', ' ', ' ', 'P', 'p', ' ', ' ', ' '},
+                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', 'q'},
+                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
                 };
     }
 
@@ -167,6 +169,7 @@ public class Position {
             if(((newPosition.getwP() >> i) & 1) == 1) {position[i/8][i%8] = 'P';}
             enPassant = newPosition.getEnPassant();
             castlingRights = newPosition.getCastling();
+            whiteToMove = newPosition.getWhiteToMove();
         }
         initBitboards();
     }
@@ -277,4 +280,6 @@ public class Position {
     public byte getEnPassant(){return enPassant;}
 
     public byte getCastlingRights(){return castlingRights;}
+
+    public boolean getWhiteToMove(){return whiteToMove;}
 }
