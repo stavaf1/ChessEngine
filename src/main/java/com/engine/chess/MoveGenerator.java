@@ -17,11 +17,11 @@ public class MoveGenerator {
      * q = queen promotion
      */
 
-    private static long CASTLE_TOPLEFT = 30L;
+    private static long CASTLE_TOPLEFT = 28L;
 
     private static long CASTLE_TOPRIGHT = 112;
 
-    private static long CASTLE_BOTTOMLEFT = 2161727821137838080L;
+    private static long CASTLE_BOTTOMLEFT = 2017612633061982208L;
     private static long CASTLE_BOTTOMRIGHT = 8070450532247928832L;
 
     private static long CASTLECLEAR_TOPLEFT = 14L;
@@ -89,7 +89,6 @@ public class MoveGenerator {
             blackMoves += kingMoves(bK, castling, false);
         }
 
-        System.out.println(numChecks);
         if(numChecks == 2) return kingMoves(isWhite? wK : bK, castling, isWhite);
         return isWhite ? whiteMoves: blackMoves;
 
@@ -267,6 +266,9 @@ public class MoveGenerator {
     {
         long from = 1L << (parseLong("" + move.charAt(0))*8 + parseLong("" + move.charAt(1)));
         long to = 1L << (parseLong("" + move.charAt(3))*8 + parseLong("" + move.charAt(4)));
+        byte castlingRightsMask = 0;
+        if((to & bR) != 0){if((bR & fileMask[0]) != 0)castlingRightsMask |= (byte) 0b00001000; if((bR & fileMask[7]) != 0) castlingRightsMask |= 0b00000100;}
+        if((to & wR) != 0){if((wR & fileMask[0]) != 0) castlingRightsMask |= 0b00000010; if((wR & fileMask[7]) != 0) castlingRightsMask |= 0b00000001;}
         wN &= ~to;
         wB &= ~to;
         wR &= ~to;
@@ -279,21 +281,21 @@ public class MoveGenerator {
         bP &= ~to;
 
         BitBoardPosition pseudoLegalPosition = null;
-        byte castlingRightsMask = 0;
+
         switch (move.charAt(2)){
             case 'x', 'n':
-                if(((from & wR) != 0L) | (from&wR) == 1L){wR &= ~from; wR |= to;if((wR & fileMask[0]) == 0) castlingRightsMask = 0b00000010; if((wR & fileMask[7]) == 0) castlingRightsMask = 0b00000001;}
+                if(((from & wR) != 0L) | (from&wR) == 1L){wR &= ~from; wR |= to;if((from & fileMask[0]) == 0) castlingRightsMask |= 0b00000010; if((from & fileMask[7]) == 0) castlingRightsMask |= 0b00000001;}
                 if((from & wN) != 0L){wN &= ~from; wN |= to;}
                 if((from & wB) !=  0L){wB &= ~from; wB |= to;}
                 if((from & wQ) !=  0L){wQ &= ~from; wQ |= to;}
                 if((from & wP) !=  0L){wP &= ~from; wP |= to;}
-                if((from & bR) !=  0L){bR &= ~from; bR |= to;if((bR & fileMask[0]) > 1) castlingRightsMask = 0b00001000; if((bR & fileMask[7]) > 1) castlingRightsMask = 0b00000100;}
+                if((from & bR) !=  0L){bR &= ~from; bR |= to;if((from & fileMask[0]) != 0) castlingRightsMask |= 0b00001000; if((from & fileMask[7]) != 0) castlingRightsMask |= 0b00000100;}
                 if((from & bN) !=  0L){bN &= ~from; bN |= to;}
                 if((from & bB) !=  0L){bB &= ~from; bB |= to;}
                 if((from & bQ) !=  0L){bQ &= ~from; bQ |= to;}
                 if((from & bP) !=  0L){bP &= ~from; bP |= to;}
-                if((from & bK) !=  0L){bK &= ~from; bK |= to;castlingRightsMask = 0b00001100;}
-                if((from & wK) !=  0L){wK &= ~from; wK |= to;castlingRightsMask = 0b00000011;}
+                if((from & bK) !=  0L){bK &= ~from; bK |= to;castlingRightsMask |= 0b00001100;}
+                if((from & wK) !=  0L){wK &= ~from; wK |= to;castlingRightsMask |= 0b00000011;}
                 pseudoLegalPosition = new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP, !isWhite);
                 pseudoLegalPosition.setCastling((byte)(previousCastling & ~castlingRightsMask));
                 break;

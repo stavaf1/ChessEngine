@@ -1,5 +1,7 @@
 package com.engine.chess;
 
+import java.util.HashMap;
+
 public class Position {
     private char[][] position;
 
@@ -30,14 +32,14 @@ public class Position {
     public void initialise(){
         position =
                 new char[][]{
-                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-                        {' ', 'K', ' ', ' ', ' ', ' ', ' ', 'r'},
-                        {' ', ' ', ' ', 'P', 'p', ' ', ' ', ' '},
-                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
-                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                        {'r', ' ', ' ', ' ', 'k', ' ', ' ', 'r'},
+                        {' ', 'p', 'p', 'p', ' ', 'p', 'p', ' '},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', 'q'},
+                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', 'Q'},
                         {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                        {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
+                        {' ', 'P', 'P', 'P', ' ', 'P', 'P', ' '},
+                        {'R', ' ', ' ', ' ', 'K', ' ', ' ', 'R'},
                 };
     }
 
@@ -53,8 +55,10 @@ public class Position {
         position = new char[][]{
                 {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}, {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}, {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}, {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}, {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}, {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}, {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '}, {' ', ' ', ' ', ' ', ' ', ' ', ' ', ' '},
         };
-        for(char piece: fenString.toCharArray()){
-            if(piece == ' ')return;
+
+        //parse the first segement of the fen string, initialising all pieces
+        String[] fenSegments = fenString.split(" ");
+        for(char piece: fenSegments[0].toCharArray()){
             if(validPieceCharacters.contains("" + piece)){
                 position[i][j] = piece;
                 j++;
@@ -73,6 +77,27 @@ public class Position {
                 }
             }
         }
+        //next fen segment is white or blacks turn
+        whiteToMove = fenSegments[1].equals("w") ? true : false;
+
+        //now castling rights
+        if(fenSegments[2].length() == 4) castlingRights = 0b00001111;
+        else if (fenSegments[2].equals("-")) castlingRights = 0b00000000;
+        else{
+            byte castleBuffer = (byte) 0b00000000;
+            for(char fenCastleKey: fenSegments[2].toCharArray()){
+                castleBuffer |= fenCastlingLookup.get(fenCastleKey);
+            }
+            castlingRights = castleBuffer;
+        }
+
+        //finally any potential en passants
+        if(!fenSegments[3].equals("-")){
+            enPassant = fenEnPassantLookup.get(fenSegments[3].charAt(0));
+            System.out.println(Long.toBinaryString(enPassant));
+        }
+        initBitboards();
+
     }
 
 //    {'r', 'n', 'b', 'q', 'k', 'b', 'n', 'r'},
@@ -282,4 +307,27 @@ public class Position {
     public byte getCastlingRights(){return castlingRights;}
 
     public boolean getWhiteToMove(){return whiteToMove;}
+
+    public static HashMap<Character, Byte> fenCastlingLookup = new HashMap<>(){{
+        put('K', (byte) 0b00000001);
+        put('Q', (byte) 0b00000010);
+        put('k', (byte) 0b00000100);
+        put('K', (byte) 0b00001000);
+    }};
+
+
+    /**
+     * en passant convention in this program is reversed because im an idiot
+     */
+    public static HashMap<Character, Byte> fenEnPassantLookup = new HashMap<>(){{
+        put('a', (byte) 0b00000001);
+        put('b', (byte) 0b00000010);
+        put('c', (byte) 0b00000100);
+        put('d', (byte) 0b00001000);
+        put('e', (byte) 0b00010000);
+        put('f', (byte) 0b00100000);
+        put('g', (byte) 0b01000000);
+        put('h', (byte) 0b10000000);
+    }};
+
 }
