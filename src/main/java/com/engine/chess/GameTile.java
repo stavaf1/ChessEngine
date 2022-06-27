@@ -12,6 +12,7 @@ import javafx.scene.shape.Rectangle;
 
 import java.io.File;
 import java.net.URL;
+import java.util.HashMap;
 import java.util.Iterator;
 
 public class GameTile extends StackPane {
@@ -33,7 +34,26 @@ public class GameTile extends StackPane {
 
 
         getChildren().add(rect);
-        getChildren().add(new Label(tileId));
+        getChildren().add(new Label(idToAlgebra(tileId)));
+    }
+
+    private static HashMap<String, String> fileNumberToAlgebra = new HashMap<>(){{
+        put("0", "a");
+        put("1", "b");
+        put("2", "c");
+        put("3", "d");
+        put("4", "e");
+        put("5", "f");
+        put("6", "g");
+        put("7", "h");
+    }};
+
+    private String idToAlgebra(String tileId){
+        String algebra = "";
+        algebra += fileNumberToAlgebra.get("" + tileId.charAt(1));
+        algebra += 8 - Integer.parseInt("" + tileId.charAt(0));
+
+        return algebra;
     }
 
     public void setMoveType(char movetype){this.moveType = movetype;}

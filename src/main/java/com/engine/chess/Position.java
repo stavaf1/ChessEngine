@@ -312,7 +312,7 @@ public class Position {
         put('K', (byte) 0b00000001);
         put('Q', (byte) 0b00000010);
         put('k', (byte) 0b00000100);
-        put('K', (byte) 0b00001000);
+        put('q', (byte) 0b00001000);
     }};
 
 
