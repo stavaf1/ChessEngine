@@ -91,7 +91,6 @@ public class MoveGenerator {
 
         if(numChecks == 2) return kingMoves(isWhite? wK : bK, castling, isWhite);
         return isWhite ? whiteMoves: blackMoves;
-
     }
 
     public int initBlockCheck(boolean isWhite,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
@@ -229,18 +228,24 @@ public class MoveGenerator {
             numChecks++;
         }
 
+        for(int i = 0; i < 64; i++){
+            if(((offendingKnights>>i) & 1L) == 1L){
+                UNSAFE_FORKING |= knightMoves(i);
+            }
+        }
+
         if(isWhite){
             long pawnAttackKingSquare = (((bP & ~FILE_1) << 7) & wK);
             if(pawnAttackKingSquare != 0){
                 numChecks++;
                 UNSAFE_FORKING = pawnAttackKingSquare;
-                BLOCK_CHECK = pawnAttackKingSquare >> 7;
+                BLOCK_CHECK = pawnAttackKingSquare >>> 7;
             }
             pawnAttackKingSquare = (((bP & ~FILE_8) << 9) & wK);
             if(pawnAttackKingSquare != 0){
                 numChecks++;
                 UNSAFE_FORKING = pawnAttackKingSquare;
-                BLOCK_CHECK = pawnAttackKingSquare >>9;
+                BLOCK_CHECK = pawnAttackKingSquare >>> 9;
             }
         } else {
             long pawnAttackKingSquare = (((wP & ~FILE_8) >> 7) & bK);
@@ -267,8 +272,8 @@ public class MoveGenerator {
         long from = 1L << (parseLong("" + move.charAt(0))*8 + parseLong("" + move.charAt(1)));
         long to = 1L << (parseLong("" + move.charAt(3))*8 + parseLong("" + move.charAt(4)));
         byte castlingRightsMask = 0;
-        if((to & bR) != 0){if((bR & fileMask[0]) != 0)castlingRightsMask |= (byte) 0b00001000; if((bR & fileMask[7]) != 0) castlingRightsMask |= 0b00000100;}
-        if((to & wR) != 0){if((wR & fileMask[0]) != 0) castlingRightsMask |= 0b00000010; if((wR & fileMask[7]) != 0) castlingRightsMask |= 0b00000001;}
+        if((to & bR) != 0){if((to & bR & fileMask[0] & rankMask[0]) != 0)castlingRightsMask |= (byte) 0b00001000; if((to & bR & fileMask[7] & rankMask[0]) != 0) castlingRightsMask |= 0b00000100;}
+        if((to & wR) != 0){if((to & wR & fileMask[0] & rankMask[7]) != 0) castlingRightsMask |= 0b00000010; if((to & wR & fileMask[7] & rankMask[7]) != 0) castlingRightsMask |= 0b00000001;}
         wN &= ~to;
         wB &= ~to;
         wR &= ~to;
@@ -281,15 +286,21 @@ public class MoveGenerator {
         bP &= ~to;
 
         BitBoardPosition pseudoLegalPosition = null;
+        //checking if a rook is moving
+        if((wR & from & fileMask[0] & rankMask[7]) != 0)castlingRightsMask |= (byte) 0b00000010;
+        if((wR & from & fileMask[7] & rankMask[7]) != 0)castlingRightsMask |= (byte) 0b00000001;
+
+        if((bR & from & fileMask[0] & rankMask[0]) != 0)castlingRightsMask |= (byte) 0b00001000;
+        if((bR & from & fileMask[7] & rankMask[0]) != 0)castlingRightsMask |= (byte) 0b00000100;
 
         switch (move.charAt(2)){
             case 'x', 'n':
-                if(((from & wR) != 0L) | (from&wR) == 1L){wR &= ~from; wR |= to;if((from & fileMask[0]) == 0) castlingRightsMask |= 0b00000010; if((from & fileMask[7]) == 0) castlingRightsMask |= 0b00000001;}
+                if((from & wR) != 0L){wR &= ~from; wR |= to;}
                 if((from & wN) != 0L){wN &= ~from; wN |= to;}
                 if((from & wB) !=  0L){wB &= ~from; wB |= to;}
                 if((from & wQ) !=  0L){wQ &= ~from; wQ |= to;}
                 if((from & wP) !=  0L){wP &= ~from; wP |= to;}
-                if((from & bR) !=  0L){bR &= ~from; bR |= to;if((from & fileMask[0]) != 0) castlingRightsMask |= 0b00001000; if((from & fileMask[7]) != 0) castlingRightsMask |= 0b00000100;}
+                if((from & bR) !=  0L){bR &= ~from; bR |= to;}
                 if((from & bN) !=  0L){bN &= ~from; bN |= to;}
                 if((from & bB) !=  0L){bB &= ~from; bB |= to;}
                 if((from & bQ) !=  0L){bQ &= ~from; bQ |= to;}
@@ -352,7 +363,7 @@ public class MoveGenerator {
                     bN |= to;
                 }
                 pseudoLegalPosition = new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP, !isWhite);
-                pseudoLegalPosition.setCastling(previousCastling);
+                pseudoLegalPosition.setCastling((byte) (previousCastling & ~castlingRightsMask));
                 break;
             case 'b':
                 if(isWhite){
@@ -363,7 +374,7 @@ public class MoveGenerator {
                     bB |= to;
                 }
                 pseudoLegalPosition = new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP, !isWhite);
-                pseudoLegalPosition.setCastling(previousCastling);
+                pseudoLegalPosition.setCastling((byte) (previousCastling & ~castlingRightsMask));
                 break;
             case 'r':
                 if(isWhite){
@@ -374,7 +385,7 @@ public class MoveGenerator {
                     bR |= to;
                 }
                 pseudoLegalPosition = new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP, !isWhite);
-                pseudoLegalPosition.setCastling(previousCastling);
+                pseudoLegalPosition.setCastling((byte) (previousCastling & ~castlingRightsMask));
                 break;
             case 'q':
                 if(isWhite){
@@ -385,7 +396,7 @@ public class MoveGenerator {
                     bQ |= to;
                 }
                 pseudoLegalPosition = new BitBoardPosition(bR, bN, bB, bQ, bK, bP, wR, wN, wB, wK, wQ, wP, !isWhite);
-                pseudoLegalPosition.setCastling(previousCastling);
+                pseudoLegalPosition.setCastling((byte) (previousCastling & ~castlingRightsMask));
                 break;
 
         }
@@ -475,8 +486,7 @@ public class MoveGenerator {
         long enPassantLeft = 0L;
         long enPassantRight = 0L;
         for(int i = 0; i < 8; i++){
-            //vertically pinned pieces can not en passant
-            if((((enPassant >> i) &1) == 1) &((PIN_VERTICAL & pawnBoard)== 0)){
+            if((((enPassant >> i) &1) == 1)){
                 long tempEnPassant = pawnBoard;
                 //to boards for the en passsanting pawns.
                 //prevents horizontally pinned en passant
@@ -488,8 +498,10 @@ public class MoveGenerator {
                 enPassantLeft |= ((tempEnPassant & ~FILE_1 & rankMask[4]) << 7) & fileMask[i] & (BLOCK_CHECK << 8);
                 enPassantRight |= ((tempEnPassant & ~FILE_8 & rankMask[4]) << 9) & fileMask[i] & (BLOCK_CHECK << 8);
 
-                if((PIN_BOARD & PIN_ANTIDIAGONAL & tempEnPassant) != 0) enPassantLeft = 0;
-                if((PIN_BOARD & PIN_DIAGONAL & tempEnPassant) != 0) enPassantRight = 0;
+                if((PIN_BOARD & PIN_ANTIDIAGONAL & (enPassantLeft>>7)) != 0) enPassantLeft &= PIN_ANTIDIAGONAL;
+                if((PIN_BOARD & PIN_DIAGONAL & (enPassantRight >> 9)) != 0) enPassantRight &= PIN_DIAGONAL;
+                //a vertically pinned pawn may not en passant
+                if((PIN_BOARD & PIN_VERTICAL & ((enPassantRight >> 9) | (enPassantLeft>>7))) != 0){enPassantRight =0L; enPassantLeft = 0L;}
             }
         }
         for (int i = 0; i < 64; i++){
@@ -540,7 +552,7 @@ public class MoveGenerator {
         if((possibleDiagPinnedPawn)!= 0)tempTakesRight &= ~possibleDiagPinnedPawn;
         long takesRight = ((tempTakesRight & ~FILE_1) >> 9) & BLACK_OCCUPANCY;
         WHITE_ATTACKS |= ((pawnBoard & ~FILE_1) >> 9);
-        long takesRightPromotions = takesRight & rankMask[0];
+        long takesRightPromotions = takesRight & rankMask[0] & BLOCK_CHECK;
         takesRight &= ~rankMask[0];
         takesRight &= BLOCK_CHECK;
 //        PAWN_MOVES = PAWN_MOVES | takesRight;
@@ -580,7 +592,7 @@ public class MoveGenerator {
         long enPassantLeft = 0L;
         long enPassantRight = 0L;
         for(int i = 0; i < 8; i++){
-            if((((enPassant >> i) &1) == 1) &((PIN_VERTICAL & pawnBoard)== 0)){
+            if((((enPassant >> i) &1) == 1)){
                 long tempEnPassant = pawnBoard;
                 //to boards for the en passsanting pawns.
                 //prevents horizontally pinned en passant
@@ -592,17 +604,23 @@ public class MoveGenerator {
                 //cant take left on file1, cant take right on file8, fileMask is en passant enabled file
                 //piined pawn can take left if pinned antidiagonally, and right if pinned diagonally,no en passant if the black pawn is pinned(not vertically)
 
-                enPassantLeft |= ((pawnBoard & ~FILE_8 & rankMask[3]) >> 7) & fileMask[i] & (BLOCK_CHECK >> 8);
-                enPassantRight |= ((pawnBoard & ~FILE_1 & rankMask[3]) >> 9) & fileMask[i] & (BLOCK_CHECK >> 8);
+                enPassantLeft |= ((pawnBoard & ~FILE_1 & rankMask[3]) >> 9) & fileMask[i] & (BLOCK_CHECK >> 8);
+                enPassantRight |= ((pawnBoard & ~FILE_8 & rankMask[3]) >> 7) & fileMask[i] & (BLOCK_CHECK >> 8);
 
-                if((PIN_BOARD & PIN_ANTIDIAGONAL & tempEnPassant) != 0) enPassantLeft = 0;
-                if((PIN_BOARD & PIN_DIAGONAL & tempEnPassant) != 0) enPassantRight = 0;
+
+
+                //if there exists a diagonally pinned pawn, an en passant move must intersect this pin to be valid
+                if((PIN_BOARD & PIN_ANTIDIAGONAL & (enPassantRight << 7)) != 0) enPassantRight &= PIN_ANTIDIAGONAL;
+                if((PIN_BOARD & PIN_DIAGONAL & (enPassantLeft << 9)) != 0) enPassantLeft &= PIN_DIAGONAL;
+                //if the pawn in question is pinned vertically, an en passant is illegal
+                if((PIN_BOARD & PIN_VERTICAL & ((enPassantRight << 7) | (enPassantLeft << 9))) != 0){enPassantRight =0L; enPassantLeft = 0L;}
 
             }
         }
         for (int i = 0; i < 64; i++){
-            if(((enPassantLeft >>> i) & 1L) == 1L){pawnMoves += "" + "3" + ((i-1)%8) + "e" +(i/8) + (i%8);}
-            if(((enPassantRight >>> i) & 1L) == 1L){pawnMoves += "" + "3" + (i%8 + 1) + "e" +(i/8) + (i%8);}
+
+            if(((enPassantLeft >>> i) & 1L) == 1L){pawnMoves += "" + "3" + (i%8 + 1) + "e" +(i/8) + (i%8);}
+            if(((enPassantRight >>> i) & 1L) == 1L){pawnMoves += "" + "3" + ((i-1)%8) + "e" +(i/8) + (i%8);}
         }
         return pawnMoves;
     }
@@ -883,26 +901,26 @@ public class MoveGenerator {
         if(isWhite){
             if((castling & 1) == 1){
                 //white kingside castles
-                long blockers = (CASTLE_BOTTOMRIGHT & BLACK_ATTACKS) | (OCCUPIED_TILES & CASTLECLEAR_BOTTOMRIGHT);
+                long blockers = (CASTLE_BOTTOMRIGHT & (UNSAFE_FORKING | BLACK_ATTACKS)) | (OCCUPIED_TILES & CASTLECLEAR_BOTTOMRIGHT);
                 if(blockers == 0)
                     viableMoves += "74l77";
             }
             if(((castling >>> 1) & 1L) == 1){
                 //white queenside castles
-                long blockers = (CASTLE_BOTTOMLEFT & BLACK_ATTACKS)|(OCCUPIED_TILES & CASTLECLEAR_BOTTOMLEFT);
+                long blockers = (CASTLE_BOTTOMLEFT & (UNSAFE_FORKING | BLACK_ATTACKS))|(OCCUPIED_TILES & CASTLECLEAR_BOTTOMLEFT);
                 if(blockers == 0)
                     viableMoves += "74c70";
             }
         } else {
             if(((castling >>> 2) & 1L) == 1){
                 //black castling kingside(topright)
-                long blockers = (CASTLE_TOPRIGHT & WHITE_ATTACKS)|(OCCUPIED_TILES & CASTLECLEAR_TOPRIGHT);
+                long blockers = (CASTLE_TOPRIGHT & (UNSAFE_FORKING | WHITE_ATTACKS))|(OCCUPIED_TILES & CASTLECLEAR_TOPRIGHT);
                 if(blockers == 0)
                     viableMoves += "04l07";
             }
             if(((castling >>> 3) & 1 ) == 1){
                 //black castles queenside
-                long blockers = (CASTLE_TOPLEFT & WHITE_ATTACKS)|(OCCUPIED_TILES & CASTLECLEAR_TOPLEFT);
+                long blockers = (CASTLE_TOPLEFT & (UNSAFE_FORKING | WHITE_ATTACKS))|(OCCUPIED_TILES & CASTLECLEAR_TOPLEFT);
                 if(blockers == 0){
                     viableMoves += "04c00";
                 }

@@ -108,12 +108,12 @@ public class Perft{
 
     public static void main(String[] args){
         Perft tester = new Perft();
-        Position initPosition = new Position("rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8");
+        Position initPosition = new Position("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
         BitBoardPosition newBitboards = new BitBoardPosition(initPosition.getbR(), initPosition.getbN(), initPosition.getbB(), initPosition.getbQ(), initPosition.getbK(), initPosition.getbP(), initPosition.getwR(), initPosition.getwN(), initPosition.getwB(), initPosition.getwK(), initPosition.getwQ(), initPosition.getwP(), initPosition.getWhiteToMove());
         newBitboards.setCastling(initPosition.getCastlingRights());
 
         long start = System.currentTimeMillis();
-        tester.divide(2, newBitboards);
+        tester.divide(4, newBitboards);
         System.out.println("took: " + (System.currentTimeMillis() - start) + "ms to generate:" );
         System.out.println("Total positions: " + totalPositions);
         System.out.println("Total promotions: " + promotionCounter);
