@@ -34,7 +34,7 @@ public class GameTile extends StackPane {
 
 
         getChildren().add(rect);
-        getChildren().add(new Label(idToAlgebra(tileId)));
+        getChildren().add(new Label(idToAlgebra(tileId) + "  " + tileId));
     }
 
     private static HashMap<String, String> fileNumberToAlgebra = new HashMap<>(){{

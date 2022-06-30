@@ -27,7 +27,8 @@ public class ChessController {
     }
 
     /**
-     *view related shenanigans, control ect.
+     *method fetches list of legal moves from the movegenerator
+     * displays all moves from a given location when that location is clicked
      */
     public void showLegalMoves(String fromLoc)
     {
@@ -61,6 +62,8 @@ public class ChessController {
             startLoc = wherepressed;
             showLegalMoves(wherepressed);
         }
+        //if the first and second click from the user describe a from location and a
+        //to location for a move, make that move
         if(moveArray.get(startLoc + wherepressed) != null){
             view.unShadePrevious();
             //check if more input is needed, ie what to promote to

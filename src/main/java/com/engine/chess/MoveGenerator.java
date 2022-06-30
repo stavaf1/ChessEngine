@@ -48,7 +48,7 @@ public class MoveGenerator {
     protected static long EDGES = -35604928818740737L;
 
 
-    protected long BLACK_OCCUPANCY, WHITE_OCCUPANCY, OCCUPIED_TILES, WHITE_ATTACKS, BLACK_ATTACKS, BLOCK_CHECK, PIN_BOARD, PIN_VERTICAL, PIN_HORIZONTAL, PIN_DIAGONAL, PIN_ANTIDIAGONAL, UNSAFE_FORKING;
+    protected long BLACK_OCCUPANCY, WHITE_OCCUPANCY, OCCUPIED_TILES, WHITE_ATTACKS, BLACK_ATTACKS, BLOCK_CHECK, PIN_BOARD, PIN_VERTICAL, PIN_HORIZONTAL, PIN_DIAGONAL, PIN_ANTIDIAGONAL, UNSAFE_FORKING, PIN_ENPASSANT;
     //BLACK/WHITE_ATTACKS denotes any square to which a black or white piece may move, especially for the purposes
     //of determining king moves
 
@@ -62,6 +62,7 @@ public class MoveGenerator {
         PIN_VERTICAL = 0L;
         WHITE_ATTACKS = 0L;
         BLACK_ATTACKS = 0L;
+        PIN_ENPASSANT = 0L;
         BLOCK_CHECK = 0b1111111111111111111111111111111111111111111111111111111111111111L;
 
         BLACK_OCCUPANCY = (bR|bN|bB|bQ|bK|bP);
@@ -142,11 +143,12 @@ public class MoveGenerator {
                 long rookToBlocker = (((blockers | fileMask[0] | fileMask[7]) - 2*thisRook) ^ (reverse(reverse(blockers | fileMask[0] | fileMask[7]) - 2*reverse(thisRook)))) & rankMask[kingSerialized/8];
                 long kingToBlocker = (((blockers | fileMask[0] | fileMask[7]) - 2*defendingKing) ^ (reverse(reverse(blockers | fileMask[0] | fileMask[7]) - 2*reverse(defendingKing)))) & rankMask[kingSerialized/8];
                 PIN_BOARD |= rookToBlocker & kingToBlocker & blockers;
-                PIN_HORIZONTAL = kingToRookHorizontalXray & (rookToBlocker | kingToBlocker) | thisRook; //where a horizontally pinned piece can move
+                PIN_HORIZONTAL = kingToRookHorizontalXray & (rookToBlocker | kingToBlocker | thisRook); //where a horizontally pinned piece can move
                 //preventing illegal en passant
                 if((kingSerialized/8 ==3) || kingSerialized/8 == 4){
-                    PIN_HORIZONTAL = kingToRookHorizontalXray & (rookToBlocker | kingToBlocker);
+                    PIN_ENPASSANT = ~thisRook & (rookRightRay | rookLeftRay);
                     //^^ this is the line from a(INCLUSIVE) to respective offender/defender NOT INCLUSIVE
+
                 }
                 //if (pinhorizontal & pinBoard) != 0, the piece can move across the pinhorizontal
             } else if ((rookRightRay & blockers) == 0 | (rookLeftRay & blockers) == 0) {
@@ -238,26 +240,26 @@ public class MoveGenerator {
             long pawnAttackKingSquare = (((bP & ~FILE_1) << 7) & wK);
             if(pawnAttackKingSquare != 0){
                 numChecks++;
-                UNSAFE_FORKING = pawnAttackKingSquare;
+                UNSAFE_FORKING |= pawnAttackKingSquare;
                 BLOCK_CHECK = pawnAttackKingSquare >>> 7;
             }
             pawnAttackKingSquare = (((bP & ~FILE_8) << 9) & wK);
             if(pawnAttackKingSquare != 0){
                 numChecks++;
-                UNSAFE_FORKING = pawnAttackKingSquare;
+                UNSAFE_FORKING |= pawnAttackKingSquare;
                 BLOCK_CHECK = pawnAttackKingSquare >>> 9;
             }
         } else {
             long pawnAttackKingSquare = (((wP & ~FILE_8) >> 7) & bK);
             if(pawnAttackKingSquare != 0){
                 numChecks++;
-                UNSAFE_FORKING = pawnAttackKingSquare;
+                UNSAFE_FORKING |= pawnAttackKingSquare;
                 BLOCK_CHECK = pawnAttackKingSquare << 7;
             }
             pawnAttackKingSquare = (((wP & ~FILE_1) >> 9) & bK);
             if(pawnAttackKingSquare != 0){
                 numChecks++;
-                UNSAFE_FORKING = pawnAttackKingSquare;
+                UNSAFE_FORKING |= pawnAttackKingSquare;
                 BLOCK_CHECK = pawnAttackKingSquare << 9;
             }
 
@@ -489,8 +491,7 @@ public class MoveGenerator {
             if((((enPassant >> i) &1) == 1)){
                 long tempEnPassant = pawnBoard;
                 //to boards for the en passsanting pawns.
-                //prevents horizontally pinned en passant
-                if((PIN_HORIZONTAL != 0) && ((PIN_HORIZONTAL& OCCUPIED_TILES & ~((tempEnPassant|(rankMask[4] & fileMask[i]))&rankMask[4])) == 0)) break;
+
                 //checks that the en passant victim is not pinned
                 if((rankMask[4] & fileMask[i] & PIN_BOARD &(PIN_DIAGONAL | PIN_ANTIDIAGONAL)) !=0) break;
                 //cant take left on file1, cant take right on file8, fileMask is en passant enabled file
@@ -501,7 +502,14 @@ public class MoveGenerator {
                 if((PIN_BOARD & PIN_ANTIDIAGONAL & (enPassantLeft>>7)) != 0) enPassantLeft &= PIN_ANTIDIAGONAL;
                 if((PIN_BOARD & PIN_DIAGONAL & (enPassantRight >> 9)) != 0) enPassantRight &= PIN_DIAGONAL;
                 //a vertically pinned pawn may not en passant
+
                 if((PIN_BOARD & PIN_VERTICAL & ((enPassantRight >> 9) | (enPassantLeft>>7))) != 0){enPassantRight =0L; enPassantLeft = 0L;}
+
+                //prevents horizontally pinned en passant
+                if((PIN_ENPASSANT & rankMask[4]) != 0) {
+                    if ((OCCUPIED_TILES & PIN_ENPASSANT & ~((enPassantRight >>> 9) | (rankMask[4] & fileMask[i]))) == 0) enPassantRight = 0L;
+                    if ((OCCUPIED_TILES & PIN_ENPASSANT & ~((enPassantLeft >>> 7) | (rankMask[4] & fileMask[i]))) == 0) enPassantLeft = 0L;
+                }
             }
         }
         for (int i = 0; i < 64; i++){
@@ -597,7 +605,7 @@ public class MoveGenerator {
                 //to boards for the en passsanting pawns.
                 //prevents horizontally pinned en passant
                 //meant to check whether there is another piece on the line between the rook and king in an enpassant scenario
-                if((PIN_HORIZONTAL != 0) && (((PIN_HORIZONTAL & OCCUPIED_TILES & ~((tempEnPassant | (rankMask[3] & fileMask[i])& rankMask[3]))) ) == 0)) break;
+//                if((PIN_HORIZONTAL != 0) && (((PIN_HORIZONTAL & OCCUPIED_TILES & ~((tempEnPassant | (rankMask[3] & fileMask[i])& rankMask[3]))) ) == 0)) break;
 
                 //checks that the en passant victim is not pinned
                 if((rankMask[3] & fileMask[i] & PIN_BOARD &(PIN_DIAGONAL | PIN_ANTIDIAGONAL)) !=0) break;
@@ -608,13 +616,16 @@ public class MoveGenerator {
                 enPassantRight |= ((pawnBoard & ~FILE_8 & rankMask[3]) >> 7) & fileMask[i] & (BLOCK_CHECK >> 8);
 
 
-
                 //if there exists a diagonally pinned pawn, an en passant move must intersect this pin to be valid
                 if((PIN_BOARD & PIN_ANTIDIAGONAL & (enPassantRight << 7)) != 0) enPassantRight &= PIN_ANTIDIAGONAL;
                 if((PIN_BOARD & PIN_DIAGONAL & (enPassantLeft << 9)) != 0) enPassantLeft &= PIN_DIAGONAL;
                 //if the pawn in question is pinned vertically, an en passant is illegal
-                if((PIN_BOARD & PIN_VERTICAL & ((enPassantRight << 7) | (enPassantLeft << 9))) != 0){enPassantRight =0L; enPassantLeft = 0L;}
 
+                if((PIN_BOARD & PIN_VERTICAL & ((enPassantRight << 7) | (enPassantLeft << 9))) != 0){enPassantRight =0L; enPassantLeft = 0L;}
+                if((PIN_ENPASSANT & rankMask[3]) != 0) {
+                    if ((OCCUPIED_TILES & PIN_ENPASSANT & ~((enPassantRight << 7) | (rankMask[3] & fileMask[i]))) == 0) enPassantRight = 0L;
+                    if ((OCCUPIED_TILES & PIN_ENPASSANT & ~((enPassantLeft << 9) | (rankMask[3] & fileMask[i]))) == 0) enPassantLeft = 0L;
+                }
             }
         }
         for (int i = 0; i < 64; i++){

@@ -49,7 +49,8 @@ public class Perft{
             BitBoardPosition holding = engine.makeMove(position.getWhiteToMove(), move, position.getCastling(), position.getbR(), position.getbN(), position.getbB(), position.getbQ(), position.getbK(), position.getbP(), position.getwR(), position.getwN(), position.getwB(), position.getwK(), position.getwQ(), position.getwP());
             generateTree(depth - 1, holding);
             if(depth == 1)totalPositions = movearray.size();
-            System.out.println(moveToAlgebra(move) + ": " + positionCounter);
+
+//            System.out.println(moveToAlgebra(move) + ": " + positionCounter);
 
             totalPositions += positionCounter;
             positionCounter = 0;
@@ -96,7 +97,7 @@ public class Perft{
      *
      *
      */
-    private String moveToAlgebra(String move){
+    public static String moveToAlgebra(String move){
         String algebra = "";
         algebra += fileNumberToAlgebra.get("" + move.charAt(1));
         algebra += 8 - Integer.parseInt("" + move.charAt(0));
@@ -106,19 +107,20 @@ public class Perft{
         return algebra;
     }
 
-    public static void main(String[] args){
+    public static long perftEntry(String fen, int depth){
         Perft tester = new Perft();
-        Position initPosition = new Position("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - ");
+        Position initPosition = new Position(fen);
         BitBoardPosition newBitboards = new BitBoardPosition(initPosition.getbR(), initPosition.getbN(), initPosition.getbB(), initPosition.getbQ(), initPosition.getbK(), initPosition.getbP(), initPosition.getwR(), initPosition.getwN(), initPosition.getwB(), initPosition.getwK(), initPosition.getwQ(), initPosition.getwP(), initPosition.getWhiteToMove());
         newBitboards.setCastling(initPosition.getCastlingRights());
 
-        long start = System.currentTimeMillis();
-        tester.divide(4, newBitboards);
-        System.out.println("took: " + (System.currentTimeMillis() - start) + "ms to generate:" );
-        System.out.println("Total positions: " + totalPositions);
-        System.out.println("Total promotions: " + promotionCounter);
-        System.out.println("total captures: " + captureCounter);
-        System.out.println("en Pasasnt: " + enPassantCounter);
-        System.out.println("castles " + castleCounter);
+        tester.divide(depth, newBitboards);
+        return totalPositions;
+    }
+
+    public static void main(String[] args){
+        Perft perft = new Perft();
+        long total = perft.perftEntry("8/2p5/3p4/KP5r/6k1/5p2/4P1P1/6R1 w - - 2 3", 2);
+        System.out.println("");
+        System.out.println("Nodes found: " + total);
     }
 }
