@@ -1,12 +1,10 @@
 package com.engine.chess;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.DialogPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.FlowPane;
@@ -16,12 +14,15 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class ChessView extends Application {
 
     private FlowPane gameTile;
     private ChessController controller;
+
     public ChessView(){
     }
 
@@ -62,6 +63,7 @@ public class ChessView extends Application {
         userControls.getChildren().add(startPos);
 
 
+
         //generating the section with the board, game tiles, pieces ect
         gameTile = new FlowPane();
         gameTile.setMinSize(640.0, 640.0);
@@ -75,14 +77,12 @@ public class ChessView extends Application {
             thisTile.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
                 GameTile currentTile = (GameTile)event.getSource();
                 controller.clickHandler(currentTile.getTileId());
-
+                new Thread(controller::computerMove).start();
             });
-
             gameTile.getChildren().add(thisTile);
 
             if(i % 8 == 0) isWhite = !isWhite;
         }
-
 
         layout.setCenter(gameTile);
         Scene scene = new Scene(layout);
@@ -90,8 +90,78 @@ public class ChessView extends Application {
         stage.setTitle("Hello!");
         stage.setScene(scene);
         stage.show();
+        setGameMode();
+
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                Platform.runLater(() -> controller.refresh());
+            }
+        }, 500, 200);
     }
 
+    public void setGameMode(){
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("select a Gamemode");
+        alert.setContentText("");
+        alert.setHeaderText("");
+        alert.setGraphic(null);
+        DialogPane options = alert.getDialogPane();
+
+
+        VBox optionCategories = new VBox();
+
+        HBox pvpOptions = new HBox();
+        HBox whiteOrBlack = new HBox();
+
+        pvpOptions.setMinSize(500, 25);
+        whiteOrBlack.setMinSize(500, 25);
+
+        //the first hBox, giving pvp or pve options
+        pvpOptions.getChildren().add(new Label("Play a human or computer?   "));
+
+        Button human = new Button("Human");
+        human.setOnAction(e -> {
+            controller.setPvP(e, true);
+            whiteOrBlack.setDisable(true);
+            whiteOrBlack.setOpacity(50.0);
+        });
+
+        Button computer = new Button("Computer");
+        computer.setOnAction(e -> {
+            controller.setPvP(e, false);
+            whiteOrBlack.setDisable(false);
+            whiteOrBlack.setOpacity(100.0);
+        });
+
+        pvpOptions.getChildren().addAll(human, computer);
+
+        //adding buttons for playing as black or white
+        whiteOrBlack.getChildren().add(new Label("Play as black or white?   "));
+
+        Button white = new Button("White");
+        white.setOnAction(e -> controller.setPlayAsWhite(e, true));
+
+        Button black = new Button("Black");
+        black.setOnAction(e -> controller.setPlayAsWhite(e, false));
+
+        whiteOrBlack.getChildren().addAll(white, black);
+
+        //putting everything together
+        optionCategories.getChildren().addAll(pvpOptions, whiteOrBlack);
+        options.getChildren().add(optionCategories);
+
+        //player can only chose white or black if he is playing against computer
+        //otherwise the logic is the same
+        whiteOrBlack.setDisable(true);
+        whiteOrBlack.setOpacity(50.0);
+
+        alert.setTitle("Settings");
+        alert.showAndWait();
+
+
+    }
 
     public String getPromotionChar(){
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -191,7 +261,6 @@ public class ChessView extends Application {
         HashMap<String, GameTile> indexTileMap = getIndexTileMap();
         for(GameTile tile: indexTileMap.values()){
             tile.removeInhabitant();
-            tile.unShade();
         }
     }
     public String tileNoToId(Integer previousValue){

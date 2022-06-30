@@ -1,29 +1,40 @@
 package com.engine.chess;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.*;
 
 public class ChessController {
+    private boolean isPvP = false;
 
+    private boolean playAsWhite = true;
     private static MoveGenerator moveGenerator;
     private static Position position;
+
+    private static NegaMax engine;
     private String startLoc = null;
 
     private String previousMove = "";
 
+    private BitBoardPosition bitPosition = null;
+
     private HashMap<String, String> moveArray;
 
     private int turn = 0;
+
+    boolean humanTurnOver;
     private ChessView view;
+
+    private static Thread engineThread;
     public ChessController(){
         position = new Position();
         moveGenerator = new MoveGenerator();
+        engine = new NegaMax();
 //        Perft perft = new Perft(position);
         position.initBitboards();
         position.bitBoardToPosition();
+        bitPosition = position.getPositionToBitBoardWrapper();
     }
 
     /**
@@ -50,10 +61,19 @@ public class ChessController {
     }
 
     public void showBoard(ActionEvent e){
+
         view.initialiseBoard(position);
+
+
     }
+
+
+
     public void clickHandler(String wherepressed){
-        if(startLoc == null || startLoc.equals("")) {
+        refresh();
+        BitBoardPosition nextPosition = null;
+        humanTurnOver = false;
+        if((startLoc == null || startLoc.equals(""))) {
             //make sure the view agrees with the position class
             view.initialiseBoard(position);
             view.unShadePrevious();
@@ -66,10 +86,11 @@ public class ChessController {
         //to location for a move, make that move
         if(moveArray.get(startLoc + wherepressed) != null){
             view.unShadePrevious();
+
             //check if more input is needed, ie what to promote to
             char promotionvalue = moveArray.get(startLoc + wherepressed).charAt(2);
             boolean isTakes = Character.isUpperCase(promotionvalue);
-            BitBoardPosition nextPosition;
+
             if(promotionvalue == 'k' || promotionvalue == 'b' || promotionvalue == 'r' || promotionvalue == 'Q' || promotionvalue == 'K' || promotionvalue == 'B' || promotionvalue == 'R' || promotionvalue == 'q'){
                 String moveType = isTakes ? view.getPromotionChar().toUpperCase() : view.getPromotionChar();
                 nextPosition = moveGenerator.makeMove(position.getWhiteToMove(), (startLoc +moveType+wherepressed), position.getCastlingRights(), position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
@@ -81,18 +102,38 @@ public class ChessController {
             else {
                  nextPosition = moveGenerator.makeMove(position.getWhiteToMove(), moveArray.get(startLoc + wherepressed), position.getCastlingRights(), position.getbR(), position.getbN(), position.getbB(), position.getbQ(), position.getbK(), position.getbP(), position.getwR(), position.getwN(), position.getwB(), position.getwK(), position.getwQ(), position.getwP());
             }
-                //updates the position class with these bitboards
+            //updates the position class with these bitboards
             position.bitBoardToPosition(nextPosition);
+            bitPosition = nextPosition;
 
             view.initialiseBoard(position);
             startLoc = null;
-            turn++;
+            nextTurn();
+
+
+            /**
+             * now that the player has made a move, so will the engine
+             */
         }
         //if the square pressed does not represent a legal move
         if(moveArray.get(startLoc + wherepressed) == null){
             view.unShadePrevious();
             startLoc = wherepressed;
             showLegalMoves(wherepressed);
+        }
+    }
+
+
+
+    public void computerMove(){
+        while ((((turn % 2 == 0) == !playAsWhite) & !isPvP)) {
+            turn++;
+            position.bitBoardToPosition(bitPosition);
+
+            String engineMove = engine.entryPoint(bitPosition);
+            bitPosition = moveGenerator.makeMove(position.getWhiteToMove(), engineMove, position.getCastlingRights(), position.getbR(), position.getbN(), position.getbB(), position.getbQ(), position.getbK(), position.getbP(), position.getwR(), position.getwN(), position.getwB(), position.getwK(), position.getwQ(), position.getwP());
+
+            position.bitBoardToPosition(bitPosition);
         }
     }
 
@@ -106,5 +147,16 @@ public class ChessController {
     public void initFen(String fen){
         position.initialise(fen);
         view.initialiseBoard(position);
+        bitPosition = position.getPositionToBitBoardWrapper();
     }
+
+
+
+    public void setPlayAsWhite(ActionEvent e, boolean isWhite){playAsWhite = isWhite;}
+
+    public void setPvP(ActionEvent e, boolean isPvP){this.isPvP = isPvP;}
+
+    public void nextTurn(){turn++;}
+
+    public void refresh(){view.initialiseBoard(position);}
 }
