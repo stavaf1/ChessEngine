@@ -16,7 +16,7 @@ class NegaMaxTest {
         BitBoardPosition newBitboards = new BitBoardPosition(initPosition.getbR(), initPosition.getbN(), initPosition.getbB(), initPosition.getbQ(), initPosition.getbK(), initPosition.getbP(), initPosition.getwR(), initPosition.getwN(), initPosition.getwB(), initPosition.getwK(), initPosition.getwQ(), initPosition.getwP(), initPosition.getWhiteToMove());
         NegaMax negaMax = new NegaMax();
 
-        System.out.println(negaMax.entryPoint(newBitboards));
+//        System.out.println(negaMax.entryPoint(newBitboards));
 
     }
 }

@@ -2,10 +2,13 @@ package com.engine.chess;
 
 import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.scene.control.Alert;
 
 import java.util.*;
 
 public class ChessController {
+
+    private static final int SEARCH_DEPTH = 3;
     private boolean isPvP = false;
 
     private boolean playAsWhite = true;
@@ -45,6 +48,10 @@ public class ChessController {
     {
         position.initBitboards();
         String legalMoves = moveGenerator.getMoves(position.getCastlingRights(), position.getEnPassant(), position.getWhiteToMove(),position.getbR(), position.getbN(),position.getbB(),position.getbQ(),position.getbK(),position.getbP(),position.getwR(),position.getwN(),position.getwB(),position.getwK(),position.getwQ(),position.getwP());
+        if(legalMoves.length() == 1){
+            gameOver(legalMoves);
+            return;
+        }
         moveArray = new HashMap<>();
         for(int i = 0; i < legalMoves.length(); i += 5){
             moveArray.put((legalMoves.substring(i,i+2) + legalMoves.substring(i+3, i+5)),legalMoves.substring(i, i+5));
@@ -54,6 +61,21 @@ public class ChessController {
                 view.shadeTile((move.substring(3)));
             }
         }
+    }
+
+    public void gameOver(String winner){
+        String alertString = "";
+        if(winner.equals("w")) {alertString = "White Wins";}
+        if(winner.equals("b")) {alertString = "Black Wins";}
+        else if(winner.equals("s")) {alertString = "StaleMate!";}
+
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Game Over!");
+        alert.setHeaderText(alertString);
+
+        alert.showAndWait();
+        wipeScreen(new ActionEvent());
+        initFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     }
 
     public void addView(ChessView view){
@@ -73,7 +95,7 @@ public class ChessController {
         refresh();
         BitBoardPosition nextPosition = null;
         humanTurnOver = false;
-        if((startLoc == null || startLoc.equals(""))) {
+        if(((turn % 2 == 0) == playAsWhite) && (startLoc == null || startLoc.equals(""))) {
             //make sure the view agrees with the position class
             view.initialiseBoard(position);
             view.unShadePrevious();
@@ -84,7 +106,7 @@ public class ChessController {
         }
         //if the first and second click from the user describe a from location and a
         //to location for a move, make that move
-        if(moveArray.get(startLoc + wherepressed) != null){
+        if(((turn % 2 == 0) == playAsWhite) && (moveArray.get(startLoc + wherepressed) != null && (turn % 2 == 0) == playAsWhite)){
             view.unShadePrevious();
 
             //check if more input is needed, ie what to promote to
@@ -109,14 +131,9 @@ public class ChessController {
             view.initialiseBoard(position);
             startLoc = null;
             nextTurn();
-
-
-            /**
-             * now that the player has made a move, so will the engine
-             */
         }
         //if the square pressed does not represent a legal move
-        if(moveArray.get(startLoc + wherepressed) == null){
+        if(((turn % 2 == 0) == playAsWhite) && moveArray.get(startLoc + wherepressed) == null){
             view.unShadePrevious();
             startLoc = wherepressed;
             showLegalMoves(wherepressed);
@@ -130,7 +147,8 @@ public class ChessController {
             turn++;
             position.bitBoardToPosition(bitPosition);
 
-            String engineMove = engine.entryPoint(bitPosition);
+            String engineMove = engine.entryPoint(bitPosition, -999999, 999999, SEARCH_DEPTH);
+            if (engineMove.length() == 1) {Platform.runLater(() -> gameOver(engineMove)); return;}
             bitPosition = moveGenerator.makeMove(position.getWhiteToMove(), engineMove, position.getCastlingRights(), position.getbR(), position.getbN(), position.getbB(), position.getbQ(), position.getbK(), position.getbP(), position.getwR(), position.getwN(), position.getwB(), position.getwK(), position.getwQ(), position.getwP());
 
             position.bitBoardToPosition(bitPosition);
@@ -141,13 +159,17 @@ public class ChessController {
     public void wipeScreen(ActionEvent e){
         position.clear();
         view.clearBoard();
+        view.unShadePrevious();
+        startLoc = null;
         turn = 0;
     }
 
     public void initFen(String fen){
+        wipeScreen(new ActionEvent());
         position.initialise(fen);
         view.initialiseBoard(position);
         bitPosition = position.getPositionToBitBoardWrapper();
+        turn = position.getWhiteToMove() ? 0 : 1;
     }
 
 

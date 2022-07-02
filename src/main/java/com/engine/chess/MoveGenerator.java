@@ -17,35 +17,35 @@ public class MoveGenerator {
      * q = queen promotion
      */
 
-    private static long CASTLE_TOPLEFT = 28L;
+    private static final long CASTLE_TOPLEFT = 28L;
 
-    private static long CASTLE_TOPRIGHT = 112;
+    private static final long CASTLE_TOPRIGHT = 112;
 
-    private static long CASTLE_BOTTOMLEFT = 2017612633061982208L;
-    private static long CASTLE_BOTTOMRIGHT = 8070450532247928832L;
+    private static final long CASTLE_BOTTOMLEFT = 2017612633061982208L;
+    private static final long CASTLE_BOTTOMRIGHT = 8070450532247928832L;
 
-    private static long CASTLECLEAR_TOPLEFT = 14L;
+    private static final long CASTLECLEAR_TOPLEFT = 14L;
 
-    private static long CASTLECLEAR_TOPRIGHT = 96L;
+    private static final long CASTLECLEAR_TOPRIGHT = 96L;
 
-    private static long CASTLECLEAR_BOTTOMLEFT = 1008806316530991104L;
+    private static final long CASTLECLEAR_BOTTOMLEFT = 1008806316530991104L;
 
-    private static long CASTLECLEAR_BOTTOMRIGHT = 6917529027641081856L;
+    private static final long CASTLECLEAR_BOTTOMRIGHT = 6917529027641081856L;
 
-    private static long WHITEROOK_CASTLEKINGSIDE = 2305843009213693952L;
+    private static final long WHITEROOK_CASTLEKINGSIDE = 2305843009213693952L;
 
-    private static long BLACKROOK_CASTLEKINGSIDE = 32L;
+    private static final long BLACKROOK_CASTLEKINGSIDE = 32L;
 
-    private static long WHITEROOK_CASTLEQUEENSIDE = 576460752303423488L;
+    private static final long WHITEROOK_CASTLEQUEENSIDE = 576460752303423488L;
 
-    private static long BLACKROOK_CASTLEQUEENSIDE = 8L;
+    private static final long BLACKROOK_CASTLEQUEENSIDE = 8L;
 
-    protected static long RANK_4 = 1095216660480L;
-    protected static long RANK_5 = 4278190080L;
-    protected static long FILE_1 = -9151031864016699136L;
-    protected static long FILE_8 = -9187201950435737472L;
+    protected static final long RANK_4 = 1095216660480L;
+    protected static final long RANK_5 = 4278190080L;
+    protected static final long FILE_1 = -9151031864016699136L;
+    protected static final long FILE_8 = -9187201950435737472L;
 
-    protected static long EDGES = -35604928818740737L;
+    protected static final long EDGES = -35604928818740737L;
 
 
     protected long BLACK_OCCUPANCY, WHITE_OCCUPANCY, OCCUPIED_TILES, WHITE_ATTACKS, BLACK_ATTACKS, BLOCK_CHECK, PIN_BOARD, PIN_VERTICAL, PIN_HORIZONTAL, PIN_DIAGONAL, PIN_ANTIDIAGONAL, UNSAFE_FORKING, PIN_ENPASSANT;
@@ -53,7 +53,7 @@ public class MoveGenerator {
     //of determining king moves
 
     public String getMoves(byte castling, byte enPassant ,boolean isWhite ,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP){
-        long startTime = System.currentTimeMillis();
+
         UNSAFE_FORKING = 0L;
         PIN_BOARD = 0L;
         PIN_ANTIDIAGONAL = 0L;
@@ -78,7 +78,7 @@ public class MoveGenerator {
 
         //it will be important to consider the fact that king move generation will come last.
         String whiteMoves = whitePawnMoves(wP, enPassant) + bishopMoves(wB, true) + rookMoves(wR, true) + knightMoves(wN, true) + rookMoves(wQ, true) + bishopMoves(wQ, true);
-        String blackMoves = blackPawnMoves(bP, wP,enPassant) + bishopMoves(bB, false) + rookMoves(bR, false) + knightMoves(bN, false) + rookMoves(bQ, false) + bishopMoves(bQ,false);
+        String blackMoves = blackPawnMoves(bP, enPassant) + bishopMoves(bB, false) + rookMoves(bR, false) + knightMoves(bN, false) + rookMoves(bQ, false) + bishopMoves(bQ,false);
 
         if(isWhite){
             //to ensure white king cannot be adjacent to the black king, by
@@ -89,9 +89,15 @@ public class MoveGenerator {
             whiteMoves += kingMoves(wK, castling, true);
             blackMoves += kingMoves(bK, castling, false);
         }
+        String allMoves = "";
+        if(numChecks == 2) allMoves = kingMoves(isWhite? wK : bK, castling, isWhite);
+        else allMoves = isWhite ? whiteMoves: blackMoves;
 
-        if(numChecks == 2) return kingMoves(isWhite? wK : bK, castling, isWhite);
-        return isWhite ? whiteMoves: blackMoves;
+        if (allMoves.length() == 0 && numChecks == 0) return "s";
+        //if on whites tturn it is in check with no legal moves, it is checkmate
+        if (allMoves.length() == 0 && numChecks > 0) return isWhite ? "b" : "w";
+
+        else return allMoves;
     }
 
     public int initBlockCheck(boolean isWhite,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP)
@@ -405,9 +411,9 @@ public class MoveGenerator {
         return pseudoLegalPosition;
     }
     
-    public String blackPawnMoves(long pawnBoard, long opposingPawnBoard,byte enPassant)
+    public String blackPawnMoves(long pawnBoard, byte enPassant)
     {
-        String pawnMoves = "";
+        StringBuilder pawnMoves = new StringBuilder();
         long PAWN_MOVES = 0L;
 
 //        moves forward by one
@@ -423,13 +429,13 @@ public class MoveGenerator {
         //diagonally or horiontally pinned pawns cannot move forward
         for(int i = 0; i < 64; i++){
             if(((bitOneForward >> i) & 1) == 1){
-                pawnMoves += "" + (i/8 - 1) + (i%8) + "n" + (i/8) + (i%8); //n denoting normal move
+                pawnMoves.append(i / 8 - 1).append(i % 8).append("n").append(i / 8).append(i % 8); //n denoting normal move
             }
             if(((promotions>>i) & 1) == 1){
-                pawnMoves += "" + (i/8 - 1) + (i%8) + "k" + (i/8) + (i%8);
-                pawnMoves += "" + (i/8 - 1) + (i%8) + "b" + (i/8) + (i%8);
-                pawnMoves += "" + (i/8 - 1) + (i%8) + "r" + (i/8) + (i%8);
-                pawnMoves += "" + (i/8 - 1) + (i%8) + "q" + (i/8) + (i%8);
+                pawnMoves.append(i / 8 - 1).append(i % 8).append("k").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 - 1).append(i % 8).append("b").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 - 1).append(i % 8).append("r").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 - 1).append(i % 8).append("q").append(i / 8).append(i % 8);
             }
         }
 
@@ -437,7 +443,8 @@ public class MoveGenerator {
         // moves forward by two
         long bitTwoForward = ((preForwardBoard << 16) & RANK_5 & (~OCCUPIED_TILES << 8) & ~OCCUPIED_TILES &BLOCK_CHECK);
         PAWN_MOVES = PAWN_MOVES | bitTwoForward;
-        for(int i = 0; i < 64; i++){if(((PAWN_MOVES >> i) & 1) == 1){pawnMoves += "" + (i/8 - 2) + (i%8)+ "p" + (i/8) + (i%8);}}
+        for(int i = 0; i < 64; i++){if(((PAWN_MOVES >> i) & 1) == 1){
+            pawnMoves.append(i / 8 - 2).append(i % 8).append("p").append(i / 8).append(i % 8);}}
 
         //removing any possibly pinned pawns pinned horizontally
         long tempTakesLeft = pawnBoard;
@@ -453,13 +460,13 @@ public class MoveGenerator {
 //        PAWN_MOVES = PAWN_MOVES | takesLeft;
         for(int i = 0; i < 64; i++){
             if(((takesLeft >> i) & 1) == 1){
-                pawnMoves += ("" + (i/8 - 1) + (i%8 + 1)+ "x" + (i/8) + (i%8));
+                pawnMoves.append(i / 8 - 1).append(i % 8 + 1).append("x").append(i / 8).append(i % 8);
             }
             if(((promotionTakesLeft >> i) & 1) == 1){
-                pawnMoves += ("" + (i/8 - 1) + (i%8 + 1)+ "k" + (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 - 1) + (i%8 + 1)+ "b" + (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 - 1) + (i%8 + 1)+ "r" + (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 - 1) + (i%8 + 1)+ "q" + (i/8) + (i%8));
+                pawnMoves.append(i / 8 - 1).append(i % 8 + 1).append("k").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 - 1).append(i % 8 + 1).append("b").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 - 1).append(i % 8 + 1).append("r").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 - 1).append(i % 8 + 1).append("q").append(i / 8).append(i % 8);
             }
         }
         //removing antidiagonally pinned piece
@@ -474,13 +481,13 @@ public class MoveGenerator {
 //        PAWN_MOVES = PAWN_MOVES | takesRight;
         for(int i = 0; i < 64; i++){
             if(((takesRight >> i) & 1) == 1){
-                pawnMoves += ("" + (i/8 - 1) + ((i-1)%8)+ "x" + (i/8) + (i%8));
+                pawnMoves.append(i / 8 - 1).append((i - 1) % 8).append("x").append(i / 8).append(i % 8);
             }
             if(((promotionTakesRight >> i) & 1) == 1){
-                pawnMoves += ("" + (i/8 - 1) + ((i-1)%8)+ "k" + (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 - 1) + ((i-1)%8)+ "b" + (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 - 1) + ((i-1)%8)+ "r" + (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 - 1) + ((i-1)%8)+ "q" + (i/8) + (i%8));
+                pawnMoves.append(i / 8 - 1).append((i - 1) % 8).append("k").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 - 1).append((i - 1) % 8).append("b").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 - 1).append((i - 1) % 8).append("r").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 - 1).append((i - 1) % 8).append("q").append(i / 8).append(i % 8);
             }
         }
         // en passant
@@ -513,19 +520,21 @@ public class MoveGenerator {
             }
         }
         for (int i = 0; i < 64; i++){
-            if(((enPassantLeft >>> i) & 1L) == 1L){pawnMoves += "" + "4" + (i%8 + 1) + "e" +(i/8) + (i%8);}
-            if(((enPassantRight >>> i) & 1L) == 1L){pawnMoves += "" + "4" + ((i-1)%8) + "e" +(i/8) + (i%8);}
+            if(((enPassantLeft >>> i) & 1L) == 1L){
+                pawnMoves.append("" + "4").append(i % 8 + 1).append("e").append(i / 8).append(i % 8);}
+            if(((enPassantRight >>> i) & 1L) == 1L){
+                pawnMoves.append("" + "4").append((i - 1) % 8).append("e").append(i / 8).append(i % 8);}
         }
 
 
-        return pawnMoves;
+        return pawnMoves.toString();
     }
 
 
     public String whitePawnMoves(long pawnBoard, byte enPassant)
     {
 
-        String pawnMoves = "";
+        StringBuilder pawnMoves = new StringBuilder();
         long PAWN_MOVES = 0L;
         long preForwardBoard = pawnBoard;
         long possiblePinnedPawn = PIN_BOARD & pawnBoard & (PIN_HORIZONTAL | PIN_DIAGONAL | PIN_ANTIDIAGONAL);
@@ -540,19 +549,20 @@ public class MoveGenerator {
         bitOneForward &= ~rankMask[0] &BLOCK_CHECK;
         for(int i = 0; i < 64; i++){
             if(((bitOneForward >> i) & 1L) == 1L){
-                pawnMoves += "" + (i/8 + 1) + (i%8) + "n" +(i/8) + (i%8);
+                pawnMoves.append(i / 8 + 1).append(i % 8).append("n").append(i / 8).append(i % 8);
             }
             if(((promotions >> i) & 1) ==1){
-                pawnMoves += "" + (i/8 + 1) + (i%8) + "b" +(i/8) + (i%8);
-                pawnMoves += "" + (i/8 + 1) + (i%8) + "k" +(i/8) + (i%8);
-                pawnMoves += "" + (i/8 + 1) + (i%8) + "r" +(i/8) + (i%8);
-                pawnMoves += "" + (i/8 + 1) + (i%8) + "q" +(i/8) + (i%8);
+                pawnMoves.append(i / 8 + 1).append(i % 8).append("b").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 + 1).append(i % 8).append("k").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 + 1).append(i % 8).append("r").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 + 1).append(i % 8).append("q").append(i / 8).append(i % 8);
             }
         }
 
         long bitTwoForward = ((preForwardBoard >>> 16) & RANK_4) & (~OCCUPIED_TILES >> 8) & ~OCCUPIED_TILES & BLOCK_CHECK;
         PAWN_MOVES = PAWN_MOVES | bitTwoForward;
-        for(int i = 0; i < 64; i++){if(((PAWN_MOVES >> i) & 1) == 1){pawnMoves += "" + (i/8 + 2) + (i%8)+ "p" + (i/8) + (i%8);}}
+        for(int i = 0; i < 64; i++){if(((PAWN_MOVES >> i) & 1) == 1){
+            pawnMoves.append(i / 8 + 2).append(i % 8).append("p").append(i / 8).append(i % 8);}}
 
         long tempTakesRight = pawnBoard;
 //        long possibleAntidiagPinnedPawn = (tempTakesRight & PIN_BOARD & (PIN_ANTIDIAGONAL | PIN_HORIZONTAL | PIN_VERTICAL));
@@ -566,13 +576,13 @@ public class MoveGenerator {
 //        PAWN_MOVES = PAWN_MOVES | takesRight;
         for(int i = 0; i < 64; i++){
             if(((takesRight >> i) & 1) == 1){
-                pawnMoves += ("" + (i/8 + 1) + (i%8 + 1) +"x"+ (i/8) + (i%8));
+                pawnMoves.append(i / 8 + 1).append(i % 8 + 1).append("x").append(i / 8).append(i % 8);
             }
             if(((takesRightPromotions>>i)&1)==1){
-                pawnMoves += ("" + (i/8 + 1) + (i%8 + 1) +"k"+ (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 + 1) + (i%8 + 1) +"b"+ (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 + 1) + (i%8 + 1) +"r"+ (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 + 1) + (i%8 + 1) +"q"+ (i/8) + (i%8));
+                pawnMoves.append(i / 8 + 1).append(i % 8 + 1).append("k").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 + 1).append(i % 8 + 1).append("b").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 + 1).append(i % 8 + 1).append("r").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 + 1).append(i % 8 + 1).append("q").append(i / 8).append(i % 8);
             }
         }
         long tempTakesLeft = pawnBoard;
@@ -587,13 +597,13 @@ public class MoveGenerator {
 //        PAWN_MOVES = PAWN_MOVES | takesLeft;
         for(int i = 0; i < 64; i++){
             if(((takesLeft >> i) & 1) == 1){
-                pawnMoves += ("" + (i/8 + 1) + ((i-1)%8)+ "x" + (i/8) + (i%8));
+                pawnMoves.append(i / 8 + 1).append((i - 1) % 8).append("x").append(i / 8).append(i % 8);
             }
             if(((takesLeftPromotions >> i)&1)==1){
-                pawnMoves += ("" + (i/8 + 1) + ((i-1)%8)+ "k" + (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 + 1) + ((i-1)%8)+ "b" + (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 + 1) + ((i-1)%8)+ "r" + (i/8) + (i%8));
-                pawnMoves += ("" + (i/8 + 1) + ((i-1)%8)+ "q" + (i/8) + (i%8));
+                pawnMoves.append(i / 8 + 1).append((i - 1) % 8).append("k").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 + 1).append((i - 1) % 8).append("b").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 + 1).append((i - 1) % 8).append("r").append(i / 8).append(i % 8);
+                pawnMoves.append(i / 8 + 1).append((i - 1) % 8).append("q").append(i / 8).append(i % 8);
             }
         }
 
@@ -630,10 +640,12 @@ public class MoveGenerator {
         }
         for (int i = 0; i < 64; i++){
 
-            if(((enPassantLeft >>> i) & 1L) == 1L){pawnMoves += "" + "3" + (i%8 + 1) + "e" +(i/8) + (i%8);}
-            if(((enPassantRight >>> i) & 1L) == 1L){pawnMoves += "" + "3" + ((i-1)%8) + "e" +(i/8) + (i%8);}
+            if(((enPassantLeft >>> i) & 1L) == 1L){
+                pawnMoves.append("" + "3").append(i % 8 + 1).append("e").append(i / 8).append(i % 8);}
+            if(((enPassantRight >>> i) & 1L) == 1L){
+                pawnMoves.append("" + "3").append((i - 1) % 8).append("e").append(i / 8).append(i % 8);}
         }
-        return pawnMoves;
+        return pawnMoves.toString();
     }
 
     /**
@@ -646,7 +658,7 @@ public class MoveGenerator {
      */
 
     public String rookMoves(long rookBoard, boolean isWhite){
-        String viableMoves = "";
+        StringBuilder viableMoves = new StringBuilder();
         for(int i = 0; i < 64; i++){
             if(((rookBoard >> i) & 1) == 1){
                 String startLoc = "" + i/8 + i%8;
@@ -681,20 +693,20 @@ public class MoveGenerator {
                 }
                 for(int j =0; j < 64; j++){
                     if(((takes >> j) & 1) == 1){
-                        viableMoves += startLoc + "x" + j/8 + j%8;
+                        viableMoves.append(startLoc).append("x").append(j / 8).append(j % 8);
                     }
                     if(((quiets >> j) & 1) == 1){
-                        viableMoves += startLoc + "n" + j/8 + j%8;
+                        viableMoves.append(startLoc).append("n").append(j / 8).append(j % 8);
                     }
                 }
             }
         }
 
-        return viableMoves;
+        return viableMoves.toString();
     }
 
     public String bishopMoves(long bishBoard, boolean isWhite){
-        String viableMoves = "";
+        StringBuilder viableMoves = new StringBuilder();
         for(int i = 0; i < 64; i++){
             if(((bishBoard >> i) & 1) == 1){
                 String startLoc = "" + i/8 + i%8;
@@ -729,20 +741,20 @@ public class MoveGenerator {
                 }
                 for(int j =0; j < 64; j++){
                     if(((takes >> j) & 1) == 1){
-                        viableMoves += startLoc + "x" + j/8 + j%8;
+                        viableMoves.append(startLoc).append("x").append(j / 8).append(j % 8);
                     }
                     if(((quiets >> j) & 1) == 1){
-                        viableMoves += startLoc + "n" + j/8 + j%8;
+                        viableMoves.append(startLoc).append("n").append(j / 8).append(j % 8);
                     }
                 }
 
             }
         }
-        return viableMoves;
+        return viableMoves.toString();
     }
 
     public String knightMoves(long knightBoard, boolean isWhite){
-        String viableMoves = "";
+        StringBuilder viableMoves = new StringBuilder();
         if((PIN_BOARD & knightBoard) != 0) knightBoard &= ~PIN_BOARD;
         for(int i = 0; i < 64; i++){
             if(((knightBoard >> i) & 1) == 1){
@@ -766,19 +778,19 @@ public class MoveGenerator {
                 }
                 for(int j =0; j < 64; j++){
                     if(((takes >> j) & 1) == 1){
-                        viableMoves += startLoc + "x" + j/8 + j%8;
+                        viableMoves.append(startLoc).append("x").append(j / 8).append(j % 8);
                     }
                     if(((quiets >> j) & 1) == 1){
-                        viableMoves += startLoc + "n" + j/8 + j%8;
+                        viableMoves.append(startLoc).append("n").append(j / 8).append(j % 8);
                     }
                 }
             }
         }
 
-        return viableMoves;
+        return viableMoves.toString();
     }
     public String kingMoves(long kingBoard, byte castling, boolean isWhite){
-        String viableMoves = "";
+        StringBuilder viableMoves = new StringBuilder();
         for(int i = 0; i < 64; i++){
             if(((kingBoard >> i) & 1) == 1){
                 String startLoc = "" + i/8 + i%8;
@@ -803,17 +815,17 @@ public class MoveGenerator {
                 }
                 for(int j =0; j < 64; j++){
                     if(((takes >> j) & 1) == 1){
-                        viableMoves += startLoc + "x" + j/8 + j%8;
+                        viableMoves.append(startLoc).append("x").append(j / 8).append(j % 8);
                     }
                     if(((quiets >> j) & 1) == 1){
-                        viableMoves += startLoc + "n" + j/8 + j%8;
+                        viableMoves.append(startLoc).append("n").append(j / 8).append(j % 8);
                     }
                 }
-                viableMoves += getCastles(castling, isWhite);
+                viableMoves.append(getCastles(castling, isWhite));
             }
         }
 
-        return viableMoves;
+        return viableMoves.toString();
     }
 
 
@@ -873,10 +885,6 @@ public class MoveGenerator {
      * castling byte convention
      * 00001111 = both sides can castle
      *     ^^^^ ones denote castling rights, beginning in top-left, top-right, bottom-left, bottom-right;
-     * @param pieceLoc
-     * @param castling
-     * @param isWhite
-     * @return
      */
     public long kingMoves(int pieceLoc, byte castling, boolean isWhite){
         long bitPieceLoc = 1L << pieceLoc;
@@ -901,39 +909,36 @@ public class MoveGenerator {
      * castling byte convention
      * 00001111 = both sides can castle
      *     ^^^^ ones denote castling rights, beginning in top-left, top-right, bottom-left, bottom-right;
-     * @param castling
-     * @param isWhite
-     * @return
      */
     public String getCastles(byte castling, boolean isWhite)
     {
-        String viableMoves = "";
+        StringBuilder viableMoves = new StringBuilder();
 
         if(isWhite){
             if((castling & 1) == 1){
                 //white kingside castles
                 long blockers = (CASTLE_BOTTOMRIGHT & (UNSAFE_FORKING | BLACK_ATTACKS)) | (OCCUPIED_TILES & CASTLECLEAR_BOTTOMRIGHT);
                 if(blockers == 0)
-                    viableMoves += "74l77";
+                    viableMoves.append("74l77");
             }
             if(((castling >>> 1) & 1L) == 1){
                 //white queenside castles
                 long blockers = (CASTLE_BOTTOMLEFT & (UNSAFE_FORKING | BLACK_ATTACKS))|(OCCUPIED_TILES & CASTLECLEAR_BOTTOMLEFT);
                 if(blockers == 0)
-                    viableMoves += "74c70";
+                    viableMoves.append("74c70");
             }
         } else {
             if(((castling >>> 2) & 1L) == 1){
                 //black castling kingside(topright)
                 long blockers = (CASTLE_TOPRIGHT & (UNSAFE_FORKING | WHITE_ATTACKS))|(OCCUPIED_TILES & CASTLECLEAR_TOPRIGHT);
                 if(blockers == 0)
-                    viableMoves += "04l07";
+                    viableMoves.append("04l07");
             }
             if(((castling >>> 3) & 1 ) == 1){
                 //black castles queenside
                 long blockers = (CASTLE_TOPLEFT & (UNSAFE_FORKING | WHITE_ATTACKS))|(OCCUPIED_TILES & CASTLECLEAR_TOPLEFT);
                 if(blockers == 0){
-                    viableMoves += "04c00";
+                    viableMoves.append("04c00");
                 }
             }
 
@@ -941,10 +946,10 @@ public class MoveGenerator {
         }
 
 
-        return viableMoves;
+        return viableMoves.toString();
     }
 
-    private static long[] fileMask = {
+    private static final long[] fileMask = {
             72340172838076673L, 144680345676153346L, 289360691352306692L, 578721382704613384L,
             1157442765409226768l, 2314885530818453536L, 4629771061636907072L, -9187201950435737472L
     };
@@ -952,7 +957,7 @@ public class MoveGenerator {
     /**
      * rankmask[0] is the topmost rank
      */
-    private static long[] rankMask = {
+    private static final long[] rankMask = {
             255L, 65280L, 16711680L, 4278190080L, 1095216660480L,
             280375465082880L, 71776119061217280L, -72057594037927936L
     };
@@ -962,7 +967,7 @@ public class MoveGenerator {
      * bottom left to top right
      * first index is square in top left, index cascades after this point
 //     */
-    private static long[] diagonalMask = {
+    private static final long[] diagonalMask = {
             1L, 258L, 66052L, 16909320L, 4328785936L, 1108169199648L, 283691315109952L,
             72624976668147840L, 145249953336295424L, 290499906672525312L, 580999813328273408L,
             1161999622361579520L, 2323998145211531264L, 4647714815446351872L, -9223372036854775808L
@@ -973,15 +978,15 @@ public class MoveGenerator {
      * first index is square in top right
      */
 
-    private static long[] antiDiagonalMask = {
+    private static final long[] antiDiagonalMask = {
             128L, 32832l, 8405024L, 2151686160L, 550831656968L, 141012904183812L,
             36099303471055874L, -9205322385119247871L, 4620710844295151872L, 2310355422147575808L,
             1155177711073755136L, 577588855528488960L ,288794425616760832L, 144396663052566528L, 72057594037927936L
     };
 
     public static void printBitBoard(long bitboard){
-        String leadingZeroes = "";
-        for(int i = 0; i < Long.numberOfLeadingZeros(bitboard); i++) leadingZeroes += "0";
+        StringBuilder leadingZeroes = new StringBuilder();
+        for(int i = 0; i < Long.numberOfLeadingZeros(bitboard); i++) leadingZeroes.append("0");
         String printout = new StringBuilder(leadingZeroes + toBinaryString(bitboard)).reverse().toString();
         for(int i = 0; i < printout.length()/8; i++){
             System.out.println("");

@@ -45,7 +45,7 @@ public class Position {
 
     /**
      * fen interpreter, only accepts valid fen strings at the moment, otherwise wierd things happen
-     * @param fenString
+     * @param fenString to display
      */
     public void initialise(String fenString){
         int i = 0;
@@ -78,7 +78,7 @@ public class Position {
             }
         }
         //next fen segment is white or blacks turn
-        whiteToMove = fenSegments[1].equals("w") ? true : false;
+        whiteToMove = fenSegments[1].equals("w");
 
         //now castling rights
         if(fenSegments[2].length() == 4) castlingRights = 0b00001111;
@@ -200,7 +200,10 @@ public class Position {
     }
 
     public BitBoardPosition getPositionToBitBoardWrapper(){
-        return new BitBoardPosition(getbR(), getbN(), getbB(), getbQ(), getbK(), getbP(), getwR(), getwN(), getwB(), getwK(), getwQ(), getwP(), getWhiteToMove());
+        BitBoardPosition bits = new BitBoardPosition(getbR(), getbN(), getbB(), getbQ(), getbK(), getbP(), getwR(), getwN(), getwB(), getwK(), getwQ(), getwP(), getWhiteToMove());
+        bits.setCastling(castlingRights);
+        bits.setEnPassant(enPassant);
+        return bits;
     }
 
 
@@ -254,7 +257,7 @@ public class Position {
     /**
      * getter methods for all bitboards, so they can be extracted and used in later calculations
      *
-     * @return
+     * @return relevant bitboard
      */
     public long getbR() {
         return bR;
