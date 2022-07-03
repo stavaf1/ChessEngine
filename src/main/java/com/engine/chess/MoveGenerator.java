@@ -46,14 +46,14 @@ public class MoveGenerator {
     protected static final long FILE_8 = -9187201950435737472L;
 
     protected static final long EDGES = -35604928818740737L;
-
+    public static long generatorTimeTrial;
 
     protected long BLACK_OCCUPANCY, WHITE_OCCUPANCY, OCCUPIED_TILES, WHITE_ATTACKS, BLACK_ATTACKS, BLOCK_CHECK, PIN_BOARD, PIN_VERTICAL, PIN_HORIZONTAL, PIN_DIAGONAL, PIN_ANTIDIAGONAL, UNSAFE_FORKING, PIN_ENPASSANT;
     //BLACK/WHITE_ATTACKS denotes any square to which a black or white piece may move, especially for the purposes
     //of determining king moves
 
     public String getMoves(byte castling, byte enPassant ,boolean isWhite ,long bR, long bN, long bB, long bQ, long bK, long bP, long wR, long wN, long wB, long wK, long wQ, long wP){
-
+        long startTime = System.currentTimeMillis();
         UNSAFE_FORKING = 0L;
         PIN_BOARD = 0L;
         PIN_ANTIDIAGONAL = 0L;
@@ -92,6 +92,8 @@ public class MoveGenerator {
         String allMoves = "";
         if(numChecks == 2) allMoves = kingMoves(isWhite? wK : bK, castling, isWhite);
         else allMoves = isWhite ? whiteMoves: blackMoves;
+
+        generatorTimeTrial += (System.currentTimeMillis() - startTime);
 
         if (allMoves.length() == 0 && numChecks == 0) return "s";
         //if on whites tturn it is in check with no legal moves, it is checkmate

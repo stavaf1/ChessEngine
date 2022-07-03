@@ -8,8 +8,20 @@ public class StaticEvaluator {
      * split pieces this way as negamax requires evaluation from the perspective of the
      * moving player
      */
+
+    /**
+     * define past pawns
+     * king mobility
+     * queening possibility
+     */
+    /**
+     * endgame if 2 major pieces each side
+     *              no queens
+     */
     private static long[] piecesToMoveList;
     private static long[] piecesNotMovingList;
+
+    public static long evaluatorTimeTrial;
 
     private static final int[] pieceWeights = new int[]{
             2538,
@@ -21,12 +33,15 @@ public class StaticEvaluator {
 
 
     public int evaluate(BitBoardPosition position) {
+        long startTime = System.currentTimeMillis();
         int material;
         int piecePlacement = 0;
 
         material = materialBalance(position);
         piecePlacement = piecePlacement(position.getWhiteToMove());
 
+
+        evaluatorTimeTrial += System.currentTimeMillis()-startTime;
         return material + piecePlacement;
     }
 
@@ -72,6 +87,16 @@ public class StaticEvaluator {
         int pieceLocations = 0;
         for(int i = 1; i < 6; i++){
             pieceLocations += (bitBoardPositionValue(piecesToMoveList[i], i, isWhite) - bitBoardPositionValue(piecesNotMovingList[i], i, !isWhite));
+        }
+        return pieceLocations;
+    }
+
+    public int piecePlacement(BitBoardPosition position)
+    {
+        initPieceArrays(position);
+        int pieceLocations = 0;
+        for(int i = 1; i < 6; i++){
+            pieceLocations += (bitBoardPositionValue(piecesToMoveList[i], i, position.getWhiteToMove()) - bitBoardPositionValue(piecesNotMovingList[i], i, !position.getWhiteToMove()));
         }
         return pieceLocations;
     }
@@ -142,14 +167,14 @@ public class StaticEvaluator {
             };
     static final int[] bbishop_pieceSquare = new int[]
             {
-                    0, 0, -10, 0, 0, -10, 0, 0,
+                    0, 0,  -10, 0, 0, -10, 0, 0,
                     0, 30, 0, 0, 0, 0, 30, 0,
                     0, 10, 0, 0, 0, 0, 10, 0,
-                    0, 0, 10, 20, 20, 10, 0, 0,
-                    0, 0, 10, 20, 20, 10, 0, 0,
-                    0, 0, 0, 10, 10, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0,  10, 20, 20, 10, 0, 0,
+                    0, 0,  10, 20, 20, 10, 0, 0,
+                    0, 0,  0, 10, 10, 0, 0, 0,
+                    0, 0,  0, 0, 0, 0, 0, 0,
+                    0, 0,  0, 0, 0, 0, 0, 0,
             };
 
     static final int[] wrook_pieceSquare = new int[]
