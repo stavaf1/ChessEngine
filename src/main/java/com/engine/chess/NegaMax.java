@@ -46,8 +46,8 @@ public class NegaMax extends StaticEvaluator{
         for(String move: takesFirst){
             BitBoardPosition holding = (engine.makeMove(position.getWhiteToMove(), move, position.getCastling(), position.getbR(), position.getbN(), position.getbB(), position.getbQ(), position.getbK(), position.getbP(), position.getwR(), position.getwN(), position.getwB(), position.getwK(), position.getwQ(), position.getwP()));
             positionSearched = 0;
-            int holdingScore = -negaMax(holding, 4, -beta, -alpha);
-//            System.out.println(move + ": given score " + holdingScore);
+            int holdingScore = -negaMax(holding, 6, -beta, -alpha);
+            System.out.println(move + ": given score " + holdingScore);
             zorb.addEntry(position, new TTentry(TTentry.Flag.EXACT, depth, holdingScore));
 
             if(holdingScore > bestScore){
@@ -170,13 +170,7 @@ public class NegaMax extends StaticEvaluator{
             if(score >= beta) return beta;
             if(score > alpha) alpha = score;
         }
-        if(score <= originalAlpha){
-            zorb.addEntry(position, new TTentry(TTentry.Flag.UPPERBOUND, -1, score));
-        } else if (score >= beta) {
-            zorb.addEntry(position, new TTentry(TTentry.Flag.LOWERBOUND, -1, score));
-        } else {
-            zorb.addEntry(position, new TTentry(TTentry.Flag.EXACT, -1, score));
-        }
+
 
 
 
@@ -195,7 +189,7 @@ public class NegaMax extends StaticEvaluator{
         for(String move: unordered){
             char moveType = move.charAt(2);
             if(moveType == 'x'){
-                ordered.add(move);
+                ordered.addFirst(move);
             } else {
                 ordered.addLast(move);
             }

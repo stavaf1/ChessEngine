@@ -943,8 +943,6 @@ public class MoveGenerator {
                     viableMoves.append("04c00");
                 }
             }
-
-
         }
 
 

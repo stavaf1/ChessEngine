@@ -94,7 +94,6 @@ public class Position {
         //finally any potential en passants
         if(!fenSegments[3].equals("-")){
             enPassant = fenEnPassantLookup.get(fenSegments[3].charAt(0));
-            System.out.println(Long.toBinaryString(enPassant));
         }
         initBitboards();
 
