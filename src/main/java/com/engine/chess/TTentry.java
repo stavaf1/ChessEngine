@@ -9,11 +9,19 @@ public class TTentry {
     private int depth;
     private int score;
 
+    private int bestMove;
+
 
     public TTentry(Flag flag, int depth, int score){
         this.flag = flag;
         this.depth = depth;
         this.score = score;
+    }
+    public TTentry(Flag flag, int depth, int score, int bestMove){
+        this.flag = flag;
+        this.depth = depth;
+        this.score = score;
+        this.bestMove = bestMove;
     }
 
     public Flag getFlag() {
@@ -25,4 +33,6 @@ public class TTentry {
     public int getScore() {
         return score;
     }
+
+    public int getBestMove(){return bestMove;}
 }

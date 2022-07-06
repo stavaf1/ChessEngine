@@ -43,7 +43,9 @@ public class PseudoLegalMoveGenerator {
 
     private static final long[] knightLookup = new long[64];
 
-    private long defPawn, defBish, defKnight, defQueen, defRook, attPieces, defPieces, allPieces, freeLocations;
+    public static long timeTrial = 0;
+
+    private long defPawn, defBish, defKnight, defQueen, defRook, defKing, attPieces, defPieces, allPieces, freeLocations;
     /**
      * constructor initialises knight and king lookup tables used throughout
      */
@@ -84,14 +86,9 @@ public class PseudoLegalMoveGenerator {
             kingMoves |= (bitPieceLoc >> 8) & ~ rankMask[7];
             kingMoves |= (bitPieceLoc >> 9) & ~ fileMask[7] & ~rankMask[7];
 
-
             kingLookup[i] = kingMoves;
         }
     }
-
-
-
-
 
     /**
      * initialises all variables needed for movegeneration, calls moveGeneration functions and collects
@@ -107,9 +104,11 @@ public class PseudoLegalMoveGenerator {
      * @return list of positions possible to get to one move on.
      */
 
-    public List<Integer> getPseudoMoves(BitBoardPosition position)
+    public ArrayList<Integer> getPseudoMoves(BitBoardPosition position)
     {
-        List<Integer> moveBuffer = new ArrayList<>(64);
+        long start = System.currentTimeMillis();
+
+        ArrayList<Integer> moveBuffer = new ArrayList<>(64);
         boolean isWhite = position.getWhiteToMove();
 
         //will be used to determine victim in move serialisation function ?? or will it
@@ -118,12 +117,13 @@ public class PseudoLegalMoveGenerator {
         defKnight = isWhite ? position.getbN() : position.getwN();
         defQueen = isWhite ? position.getbQ() : position.getwQ();
         defRook = isWhite ? position.getbR() : position.getwR();
+        defKing = isWhite ? position.getbK() : position.getwK();
 
         //important to prevent friendly fire
         attPieces = isWhite ? (position.getwP() | position.getwN() | position.getwB() | position.getwQ() | position.getwK() | position.getwR()) :
                 (position.getbB() | position.getbK() | position.getbR() | position.getbN() | position.getbP() | position.getbQ());
 
-        defPieces = (defBish | defPawn | defKnight | defQueen | defRook);
+        defPieces = (defBish | defPawn | defKnight | defQueen | defRook | defKing);
 
         allPieces = attPieces | defPieces;
 
@@ -132,8 +132,11 @@ public class PseudoLegalMoveGenerator {
 
         //calling and collecting all the move generation functions
         moveBuffer.addAll(isWhite ? whitePawnMoves(position.getwP(), position.getEnPassant()) : blackPawnMoves(position.getbP(), position.getEnPassant()));
-        moveBuffer.addAll(isWhite ? moves(position.getwR(), position.getwB(), position.getwN(), position.getwK(), position.getCastling()) :
-                moves(position.getbR(), position.getbB(), position.getbN(), position.getbK(), position.getCastling()));
+        moveBuffer.addAll(isWhite ? moves(position.getwR(), position.getwB(), position.getwN(), position.getwK(), position.getwQ()) :
+                moves(position.getbR(), position.getbB(), position.getbN(), position.getbK(), position.getbQ()));
+        moveBuffer.addAll(castles(position.getCastling(), position.getWhiteToMove()));
+
+        timeTrial += (System.currentTimeMillis() - start);
 
         return moveBuffer;
     }
@@ -150,18 +153,17 @@ public class PseudoLegalMoveGenerator {
 
 
         //step forward one
-        long oneForward = (pawnBoard >>> 8) & freeLocations;
+        long oneForward = (pawnBoard >> 8) & freeLocations;
 
         //step forward two
-        long twoForward = (pawnBoard >>> 16) & (freeLocations >> 8) & freeLocations & rankMask[4];
+        long twoForward = (pawnBoard >> 16) & (freeLocations >> 8) & freeLocations & rankMask[4];
 
         //take right
-        long takesRight = ((pawnBoard & ~fileMask[7]) >> 9) & defPieces;
+        long takesRight = ((pawnBoard & ~fileMask[0]) >> 9) & defPieces;
 
         //take left
-        long takesLeft =((pawnBoard & ~fileMask[0])>>7) & defPieces;
+        long takesLeft =((pawnBoard & ~fileMask[7])>>7) & defPieces;
 
-        //promotions
         //promotion
         long promotionLeft = takesLeft &  rankMask[0];
         takesLeft &= ~promotionLeft;
@@ -172,26 +174,26 @@ public class PseudoLegalMoveGenerator {
         long pushPromotion = oneForward & rankMask[0];
         oneForward &= ~pushPromotion;
 
-        for(int i = 1; i < 64; i++){
+        for(int i = 0; i < 64; i++){
             //send relevant information to the interpreter
-            if(((oneForward >> i) & 1) == 1)pawnMovesList.add(moveInterpereter( (1L << (i + 8)), 1L << i, 0, 5));
-            if(((twoForward >> i) & 1) == 1)pawnMovesList.add(moveInterpereter((1L << (i + 16)), 1L << i, 0, 4));
-            if(((takesRight >> i) & 1) == 1)pawnMovesList.add(moveInterpereter((1L << (i + 9)), 1L << i, 0, 0));
-            if(((takesLeft >> i) & 1) == 1)pawnMovesList.add(moveInterpereter((1L << (i + 7)), 1L << i, 0, 0));
+            if(((oneForward >>> i) & 1) == 1)pawnMovesList.add(moveInterpereter( (1L << (i + 8)), 1L << i, 0, 5));
+            if(((twoForward >>> i) & 1) == 1)pawnMovesList.add(moveInterpereter((1L << (i + 16)), 1L << i, 0, 4));
+            if(((takesRight >>> i) & 1) == 1)pawnMovesList.add(moveInterpereter((1L << (i + 9)), 1L << i, 0, 0));
+            if(((takesLeft >>> i) & 1) == 1)pawnMovesList.add(moveInterpereter((1L << (i + 7)), 1L << i, 0, 0));
 
-            if(((promotionLeft >> i) & 1L) == 1L){
+            if(((promotionLeft >>> i) & 1L) == 1L){
                 pawnMovesList.add(moveInterpereter((1L << (i + 7)), 1L << i, 0, 2));
                 pawnMovesList.add(moveInterpereter((1L << (i + 7)), 1L << i, 0, 8));
                 pawnMovesList.add(moveInterpereter((1L << (i + 7)), 1L << i, 0, 9));
                 pawnMovesList.add(moveInterpereter((1L << (i + 7)), 1L << i, 0, 10));
             }
-            if(((promotionRight >> i) & 1L) == 1L){
+            if(((promotionRight >>> i) & 1L) == 1L){
                 pawnMovesList.add(moveInterpereter((1L << (i + 9)), 1L << i, 0, 2));
                 pawnMovesList.add(moveInterpereter((1L << (i + 9)), 1L << i, 0, 8));
                 pawnMovesList.add(moveInterpereter((1L << (i + 9)), 1L << i, 0, 9));
                 pawnMovesList.add(moveInterpereter((1L << (i + 9)), 1L << i, 0, 10));
             }
-            if(((pushPromotion >> i) & 1L) == 1L){
+            if(((pushPromotion >>> i) & 1L) == 1L){
                 pawnMovesList.add(moveInterpereter((1L << (i + 8)), 1L << i, 0, 2));
                 pawnMovesList.add(moveInterpereter((1L << (i + 8)), 1L << i, 0, 8));
                 pawnMovesList.add(moveInterpereter((1L << (i + 8)), 1L << i, 0, 9));
@@ -204,9 +206,9 @@ public class PseudoLegalMoveGenerator {
 
         //enPassants
         for(int i = 0; i < 8; i++){
-            if(((enPassant >>i) & 1L) == 1L){
-                long enPassantRight = ((pawnBoard & ~fileMask[7] & rankMask[3]) >> 9) & fileMask[i];
-                long enPassantLeft = ((pawnBoard & ~fileMask[0] & rankMask[3]) >> 7) & fileMask[i];
+            if(((enPassant >>>i) & 1L) == 1L){
+                long enPassantRight = ((pawnBoard & ~fileMask[0] & rankMask[3]) >> 9) & fileMask[i];
+                long enPassantLeft = ((pawnBoard & ~fileMask[7] & rankMask[3]) >> 7) & fileMask[i];
                 if(enPassantRight != 0)pawnMovesList.add(moveInterpereter((enPassantRight << 9), enPassantRight,0, 3));
                 if(enPassantLeft != 0)pawnMovesList.add(moveInterpereter((enPassantLeft << 7), enPassantLeft,0, 3));
             }
@@ -231,20 +233,20 @@ public class PseudoLegalMoveGenerator {
         long takesRight = ((pawnBoard & ~fileMask[7]) << 9) & defPieces;
 
         //promotion
-        long promotionLeft = takesLeft &  rankMask[0];
+        long promotionLeft = takesLeft &  rankMask[7];
         takesLeft &= ~promotionLeft;
 
-        long promotionRight = takesRight & rankMask[0];
+        long promotionRight = takesRight & rankMask[7];
         takesRight &= ~promotionRight;
 
-        long pushPromotion = oneForward & rankMask[0];
+        long pushPromotion = oneForward & rankMask[7];
         oneForward &= ~pushPromotion;
 
         for(int i = 0; i < 64; i++){
-            if(((oneForward >> i) & 1L) == 1L)pawnMoves.add(moveInterpereter((1L << (i - 8)), 1L << i, 0, 5));
-            if(((twoForward >> i) & 1L) == 1L)pawnMoves.add(moveInterpereter((1L <<(i - 16)), 1L << i,0,4));
-            if(((takesLeft >> i) & 1L) ==1L)pawnMoves.add(moveInterpereter((1L << (i - 7)), 1L << i, 0, 0));
-            if(((takesRight >> i) & 1L) == 1L)pawnMoves.add(moveInterpereter((1L << (i - 9)), 1L << i, 0, 0));
+            if(((oneForward >>> i) & 1L) == 1L)pawnMoves.add(moveInterpereter((1L << (i - 8)), 1L << i, 0, 5));
+            if(((twoForward >>> i) & 1L) == 1L)pawnMoves.add(moveInterpereter((1L <<(i - 16)), 1L << i,0,4));
+            if(((takesLeft >>> i) & 1L) ==1L)pawnMoves.add(moveInterpereter((1L << (i - 7)), 1L << i, 0, 0));
+            if(((takesRight >>> i) & 1L) == 1L)pawnMoves.add(moveInterpereter((1L << (i - 9)), 1L << i, 0, 0));
 
             if(((promotionLeft >> i) & 1L) == 1L){
                 pawnMoves.add(moveInterpereter((1L << (i - 7)), 1L << i, 0, 2));
@@ -254,15 +256,15 @@ public class PseudoLegalMoveGenerator {
             }
             if(((promotionRight >> i) & 1L) == 1L){
                 pawnMoves.add(moveInterpereter((1L << (i - 9)), 1L << i, 0, 2));
-                pawnMoves.add(moveInterpereter((1L << (i - 7)), 1L << i, 0, 8));
-                pawnMoves.add(moveInterpereter((1L << (i - 7)), 1L << i, 0, 9));
-                pawnMoves.add(moveInterpereter((1L << (i - 7)), 1L << i, 0, 10));
+                pawnMoves.add(moveInterpereter((1L << (i - 9)), 1L << i, 0, 8));
+                pawnMoves.add(moveInterpereter((1L << (i - 9)), 1L << i, 0, 9));
+                pawnMoves.add(moveInterpereter((1L << (i - 9)), 1L << i, 0, 10));
             }
             if(((pushPromotion >> i) & 1L) == 1L){
                 pawnMoves.add(moveInterpereter((1L << (i - 8)), 1L << i, 0, 2));
-                pawnMoves.add(moveInterpereter((1L << (i - 7)), 1L << i, 0, 8));
-                pawnMoves.add(moveInterpereter((1L << (i - 7)), 1L << i, 0, 9));
-                pawnMoves.add(moveInterpereter((1L << (i - 7)), 1L << i, 0, 10));
+                pawnMoves.add(moveInterpereter((1L << (i - 8)), 1L << i, 0, 8));
+                pawnMoves.add(moveInterpereter((1L << (i - 8)), 1L << i, 0, 9));
+                pawnMoves.add(moveInterpereter((1L << (i - 8)), 1L << i, 0, 10));
             }
         }
 
@@ -282,11 +284,11 @@ public class PseudoLegalMoveGenerator {
         return pawnMoves;
     }
 
-    public LinkedList<Integer> moves(long rookBoard, long bishopBoard, long knightBoard, long kingBoard, byte castlingRights)
+    public LinkedList<Integer> moves(long rookBoard, long bishopBoard, long knightBoard, long kingBoard, long queenBoard)
     {
         LinkedList<Integer> moves = new LinkedList<>();
         for(int i = 0; i < 64; i++){
-            if(((rookBoard >> i) & 1L) == 1L){
+            if(((rookBoard >>> i) & 1L) == 1L){
                 long toBoard = straightSlide(1L << i, i)&~attPieces;
                 long takes = toBoard & defPieces;
                 long quiets = toBoard & ~defPieces;
@@ -295,7 +297,7 @@ public class PseudoLegalMoveGenerator {
                     if (((quiets >> j) & 1L) == 1L) moves.add(moveInterpereter((1L << i), (1L << j), 3, 5));
                 }
             }
-            if(((bishopBoard >>i) & 1L) == 1L){
+            if(((bishopBoard >>> i) & 1L) == 1L){
                 long toBoard = diagSlide(1L << i, i) &~attPieces;
                 long takes = toBoard & defPieces;
                 long quiets = toBoard & ~defPieces;
@@ -304,7 +306,7 @@ public class PseudoLegalMoveGenerator {
                     if (((quiets >> j) & 1L) == 1L) moves.add(moveInterpereter((1L << i), (1L << j), 2, 5));
                 }
             }
-            if(((knightBoard >> i) & 1L) == 1L){
+            if(((knightBoard >>> i) & 1L) == 1L){
                 long toBoard = knightLookup[i]&~attPieces;
                 long takes = toBoard & defPieces;
                 long quiets = toBoard & ~defPieces;
@@ -313,13 +315,22 @@ public class PseudoLegalMoveGenerator {
                     if (((quiets >> j) & 1L) == 1L) moves.add(moveInterpereter((1L << i), (1L << j), 1, 5));
                 }
             }
-            if(((kingBoard >> i) & 1L) == 1L){
+            if(((kingBoard >>> i) & 1L) == 1L){
                 long toBoard = kingLookup[i]&~attPieces;
                 long takes = toBoard & defPieces;
                 long quiets = toBoard & ~defPieces;
                 for(int j = 0; j < 64; j++){
-                    if (((takes >> j) & 1L) == 1L) moves.add(moveInterpereter((1L << i), (1L << j), 1, 0));
-                    if (((quiets >> j) & 1L) == 1L) moves.add(moveInterpereter((1L << i), (1L << j), 1, 5));
+                    if (((takes >> j) & 1L) == 1L) moves.add(moveInterpereter((1L << i), (1L << j), 5, 0));
+                    if (((quiets >> j) & 1L) == 1L) moves.add(moveInterpereter((1L << i), (1L << j), 5, 5));
+                }
+            }
+            if(((queenBoard >>> i) & 1L) == 1L){
+                long toBoard = (diagSlide(1L << i, i) | straightSlide(1L << i, i))&~attPieces;
+                long takes = toBoard & defPieces;
+                long quiets = toBoard & ~defPieces;
+                for(int j = 0; j < 64; j++){
+                    if (((takes >> j) & 1L) == 1L) moves.add(moveInterpereter((1L << i), (1L << j), 4, 0));
+                    if (((quiets >> j) & 1L) == 1L) moves.add(moveInterpereter((1L << i), (1L << j), 4, 5));
                 }
             }
         }
@@ -381,17 +392,55 @@ public class PseudoLegalMoveGenerator {
         boolean isInCheck = false;
 
         if(isWhite){
-            if((((kingBoard & fileMask[0]) >> 7) & defPawn) != 0) isInCheck = true;
-            if((((kingBoard & fileMask[7]) >> 9)&defPawn)!= 0)isInCheck = true;
+            if((((kingBoard & ~fileMask[0]) >> 7) & defPawn) != 0) isInCheck = true;
+            if((((kingBoard & ~fileMask[7]) >> 9) & defPawn)!= 0) isInCheck = true;
         } else {
-            if((((kingBoard & fileMask[0]) << 7) & defPawn) != 0) isInCheck = true;
-            if((((kingBoard & fileMask[7]) << 9)& defPawn)!= 0)isInCheck = true;
+            if((((kingBoard & ~fileMask[0]) << 7) & defPawn) != 0) isInCheck = true;
+            if((((kingBoard & ~fileMask[7]) << 9)& defPawn)!= 0)isInCheck = true;
         }
         if(((straightSlide(kingBoard, kingLoc)) & (defRook | defQueen)) !=0)isInCheck = true;
         if(((diagSlide(kingBoard, kingLoc)) & (defBish | defQueen)) !=0)isInCheck = true;
         if((knightLookup[kingLoc] & defKnight) != 0) isInCheck = true;
 
         return isInCheck;
+    }
+
+    public boolean isLegal(BitBoardPosition position)
+    {
+        allPieces = position.getwP() | position.getwN() | position.getwB() | position.getwR() | position.getwQ() | position.getwK() | position.getbP() | position.getbN() | position.getbB() | position.getbR() | position.getbQ() | position.getbK();
+
+        boolean isLegal = true;
+        boolean isWhite = position.getWhiteToMove();
+        //if white is about to move, black cannot be in check
+        //if white is about to move, blacks king cannot be adjacent to whites king
+        long killableKing = isWhite ? position.getbK() : position.getwK();
+        int kingLoc = 0;
+        for(int i = 0; i < 64; i++)if(((killableKing >> i)&1)==1) kingLoc = i;
+
+        //if these pieces can reach killableking, ie, if any of these pieces and killableking towards them its illegal
+        long attackingPawn = isWhite ? position.getwP():position.getbP();
+        long attackingKnight = isWhite ? position.getwN(): position.getbN();
+        long attackingBishop = isWhite ? position.getwB(): position.getbB();
+        long attackingRook = isWhite ? position.getwR(): position.getbR();
+        long attackingQueen = isWhite ? position.getwQ(): position.getbQ();
+        long attackingKing = isWhite ? position.getwK(): position.getbK();
+
+
+        if(isWhite){
+            if((((killableKing & ~fileMask[0]) << 7) & attackingPawn) != 0) isLegal = false;
+            if((((killableKing & ~fileMask[7]) << 9) & attackingPawn)!= 0)isLegal = false;
+
+        } else {
+            if((((killableKing & ~fileMask[7]) >> 7) & attackingPawn) != 0) isLegal = false;
+            if((((killableKing & ~fileMask[0]) >> 9)& attackingPawn)!= 0)isLegal = false;
+        }
+
+        if(((straightSlide(killableKing, kingLoc)) & (attackingRook | attackingQueen)) !=0)isLegal = false;
+        if(((diagSlide(killableKing, kingLoc)) & (attackingBishop | attackingQueen)) !=0)isLegal = false;
+        if((knightLookup[kingLoc] & attackingKnight) != 0) isLegal = false;
+        if((kingLookup[kingLoc] &attackingKing) != 0)isLegal = false;
+
+        return isLegal;
     }
 
     /**
@@ -415,7 +464,7 @@ public class PseudoLegalMoveGenerator {
             if(((to >> i) & 1L) == 1L) serialisedTo = i;
         }
         //find any piece being taken
-        if(moveType == 0 | moveType == 2){
+        if(moveType == 0 | moveType == 2 | moveType == 8 | moveType == 9 | moveType == 10){
             if((to & defPawn) != 0)victimId = 0;
             if((to & defKnight) != 0) victimId = 1;
             if((to & defBish) != 0) victimId = 2;
@@ -464,11 +513,11 @@ public class PseudoLegalMoveGenerator {
                 position.getwK()
         };
 
-        long fromSer = move & 0b00000000000000000000000011111111;
+        int fromSer = move & 0b00000000000000000000000011111111;
 
         //clear to location
-        long from = 1L << (fromSer);
-        long to = 1L << Integer.reverse(move & 0b11111111000000000000000000000000);
+        long to = 1L << (fromSer);
+        long from = 1L << Integer.reverse(move & 0b11111111000000000000000000000000);
         //piece ids for the moving and the moved
         int agressor = ((move >> 8) & 0b00000000000000000000000000001111);
         int victim = ((move >>12) & 0b00000000000000000000000000001111);
@@ -479,8 +528,7 @@ public class PseudoLegalMoveGenerator {
         long[] victims = isWhite ? black: white;
 
 
-        agressors[agressor] ^= (from | to);
-        victims[victim] &= ~to;
+
 
         //if a black rook in the top left is a from or to location mask castling accordingly
         if ((black[3] & 1L & (from | to)) != 0) castling &= 0b00000111;
@@ -490,10 +538,17 @@ public class PseudoLegalMoveGenerator {
         if((white[3] & 1L << 63 & (from | to)) != 0) castling &= 0b00001110;
         if((white[5] & from) != 0) castling &= 0b00001100;
 
+        agressors[agressor] ^= (from | to);
+        victims[victim] &= ~to;
+
         switch (((move >> 16) & 0b00000000000000000000000000001111)){
             case 2:
                 agressors[0] &= ~to;
                 agressors[4] |= to;
+                break;
+            case 3:
+                //cool trick, the to which an en passant moves cannot have a pawn above or below at this time. classic
+                victims[0] &= ~(to << 8 | to >> 8);
                 break;
             case 4:
                 enPassant = (byte) (1 << (fromSer%8));
@@ -534,7 +589,6 @@ public class PseudoLegalMoveGenerator {
         nextPosition.setCastling(castling);
         nextPosition.setEnPassant(enPassant);
         return nextPosition;
-
     }
 
 

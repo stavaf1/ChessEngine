@@ -1,12 +1,14 @@
 package Test;
 
+import com.engine.chess.MoveGenerator;
 import com.engine.chess.Perft;
+import com.engine.chess.PseudoLegalPerft;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class PerftTest {
-    Perft test = new Perft();
+    PseudoLegalPerft test = new PseudoLegalPerft();
     @Test
     void enPassantCorrectGeneration(){
         assertEquals(191, test.perftEntry("8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -", 2));

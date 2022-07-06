@@ -3,6 +3,7 @@ package Test;
 import com.engine.chess.BitBoardPosition;
 import com.engine.chess.Position;
 import com.engine.chess.PseudoLegalMoveGenerator;
+import com.engine.chess.PseudoLegalPerft;
 import org.junit.jupiter.api.Test;
 
 import java.sql.SQLOutput;
@@ -19,12 +20,12 @@ class PseudoLegalMoveGeneratorTest {
     @Test
     void moveInterpreterTest(){
         //checkign that reversing the integer actually works
-        int move = generator.moveInterpereter(16, 1L << 63, 15, 15);
+        int move = generator.moveInterpereter(16, 1L << 63, 3, 0);
 
         assertEquals( 63, (move & 0b00000000000000000000000011111111)); // where the to is stored 8bit
         assertEquals( 4, Integer.reverse(move & 0b11111111000000000000000000000000)); // where from is stored 8bit
-        assertEquals(15, ((move >>> 8) & 0b00000000000000000000000000001111)); //agressorId 4bit
-        assertEquals(15, ((move >> 16) & 0b00000000000000000000000000001111)); //moveType 4bit
+        assertEquals(3, ((move >>> 8) & 0b00000000000000000000000000001111)); //agressorId 4bit
+        assertEquals(0, ((move >> 16) & 0b00000000000000000000000000001111)); //moveType 4bit
     }
 
 
@@ -73,13 +74,15 @@ class PseudoLegalMoveGeneratorTest {
         List<Integer> allmoves = generator.getPseudoMoves(black);
 
 
-        generator.makeMove(black, 0);
+        System.out.println(generator.castles(initPosition.getCastlingRights(), initPosition.getWhiteToMove()).size());
 
     }
 
     @Test
     void printBitboard(){
-        generator.printBitBoard(1L << 59 | 1L << 56);
+        generator.printBitBoard(1L | 1L << 3);
     }
+
+
 
 }
