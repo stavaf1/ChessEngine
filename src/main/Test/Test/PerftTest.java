@@ -1,7 +1,5 @@
 package Test;
 
-import com.engine.chess.MoveGenerator;
-import com.engine.chess.Perft;
 import com.engine.chess.PseudoLegalPerft;
 import org.junit.jupiter.api.Test;
 

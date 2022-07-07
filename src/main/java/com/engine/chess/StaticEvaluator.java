@@ -107,7 +107,7 @@ public class StaticEvaluator {
         for(int i = 0; i < 8; i++){
             //if pawn on file, and no opposing pawn on adjacent file, count number of passed pawns and multiply by game phase
             if((fileMask[i] & wP) != 0 && (pastPawnMask[i] & bP) == 0) whiteScore += phase * bitBoardToPieceCount((fileMask[i] & wP));
-            if((fileMask[i] & bP) != 0 && (pastPawnMask[i] & wP) == 0) blackScore += phase * bitBoardToPieceCount((fileMask[i] & wP));
+            if((fileMask[i] & bP) != 0 && (pastPawnMask[i] & wP) == 0) blackScore += phase * bitBoardToPieceCount((fileMask[i] & bP));
         }
 
 

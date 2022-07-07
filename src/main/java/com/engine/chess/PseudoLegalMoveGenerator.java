@@ -376,6 +376,20 @@ public class PseudoLegalMoveGenerator {
         return castleList;
     }
 
+
+    public boolean isInCheck(BitBoardPosition position){
+        boolean isWhite = position.getWhiteToMove();
+        //all the pieces that could be giving a check
+        defPawn = isWhite ? position.getbP() : position.getwP();
+        defBish = isWhite ? position.getbB() : position.getwB();
+        defKnight = isWhite ? position.getbN() : position.getwN();
+        defQueen = isWhite ? position.getbQ() : position.getwQ();
+        defRook = isWhite ? position.getbR() : position.getwR();
+        defKing = isWhite ? position.getbK() : position.getwK();
+
+        return locationAttacked(isWhite? position.getwK() : position.getbK(), isWhite);
+    }
+
     /**
      * more lightweight check for whether a location is attacked
      * used by the castling function to determine wether the king would pass
@@ -428,7 +442,7 @@ public class PseudoLegalMoveGenerator {
 
         if(isWhite){
             if((((killableKing & ~fileMask[0]) << 7) & attackingPawn) != 0) isLegal = false;
-            if((((killableKing & ~fileMask[7]) << 9) & attackingPawn)!= 0)isLegal = false;
+            if((((killableKing & ~fileMask[7]) << 9) & attackingPawn)!= 0) isLegal = false;
 
         } else {
             if((((killableKing & ~fileMask[7]) >> 7) & attackingPawn) != 0) isLegal = false;

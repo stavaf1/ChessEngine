@@ -7,7 +7,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.stream.Collectors;
 
-import static com.engine.chess.Perft.moveToAlgebra;
 
 public class NegaMax extends StaticEvaluator{
     private int positionSearched = 0;
@@ -17,10 +16,12 @@ public class NegaMax extends StaticEvaluator{
 
     private static final int MAX_DEPTH = 20;
 
-    private static final long SEARCH_TIME = 3000;
+    private static final long SEARCH_TIME = 500;
     private static int nodesSearched = 0;
 
     private static int nullMovespruned =0;
+
+    private static int checkExtensions = 0;
 
     /**==========================================
      * CALLER FOR NEGAMAX ALGORITHM
@@ -50,9 +51,6 @@ public class NegaMax extends StaticEvaluator{
             LinkedList<Integer> moves = negaMaxOrdering(engine.getPseudoMoves(position), evalFist);
             //time control
             if(System.currentTimeMillis() - start > (SEARCH_TIME)) break;
-
-
-
             int holdingScore;
             alpha = originalAlpha;
             for (Integer move : moves) {
@@ -82,11 +80,16 @@ public class NegaMax extends StaticEvaluator{
         System.out.println("searchTime " + (System.currentTimeMillis() - start));
 
 
-
+        System.out.println("==============================================================");
         System.out.println("evaluation: " + evaluatorTimeTrial);
         System.out.println("generation: " + PseudoLegalMoveGenerator.timeTrial);
         System.out.println("nodes Searched: " + nodesSearched);
         System.out.println("nulls pruned: " + nullMovespruned);
+        System.out.println("check extensions: " + checkExtensions);
+        System.out.println("==============================================================");
+        checkExtensions = 0;
+        nodesSearched = 0;
+        nullMovespruned = 0;
         evaluatorTimeTrial = 0;
         PseudoLegalMoveGenerator.timeTrial = 0;
         return bestMove;
@@ -135,6 +138,11 @@ public class NegaMax extends StaticEvaluator{
                 nullMovespruned++;
                 return beta;
             }
+        }
+        //check extension, if a side is in check extend the search
+        if(engine.isInCheck(position) && depth < 2) {
+            depth++;
+            checkExtensions++;
         }
 
 

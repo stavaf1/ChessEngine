@@ -22,7 +22,7 @@ public class ChessController {
 
     private BitBoardPosition bitPosition = null;
 
-    private HashMap<String, Integer> moveArray;
+    private final HashMap<String, Integer> moveArray = new HashMap<>();
 
     private int turn = 0;
 
@@ -51,7 +51,6 @@ public class ChessController {
     public void showLegalMoves(String fromLoc)
     {
         position.initBitboards();
-        moveArray = new HashMap<>();
         ArrayList<Integer> moves = moveGenerator.getPseudoMoves(position.getPositionToBitBoardWrapper());
         for(int move:moves){
             if(moveGenerator.isLegal(moveGenerator.makeMove(position.getPositionToBitBoardWrapper(), move))) moveArray.put(translator(move), move);
